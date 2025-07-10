@@ -1,0 +1,47 @@
+# Arquivos Excel baixados automaticamente
+*.xls
+*.xlsx
+*.xlsm
+
+# Arquivos do Chrome/ChromeDriver
+chromedriver.exe
+chrome-win64/
+
+# Arquivos Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+*.log
+logs/
+
+# Arquivos temporários
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Configurações locais
+config.ini
+credentials.txt
+
+# Pasta de download (se existir)
+downloads/
+temp/
+
+# Arquivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos de sistema
+desktop.ini 
