@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - Sistema NOC</title>
+    <link rel="icon" type="image/jpeg" href="https://rno.gms.stte.com.br/v3/images/logo.jpg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <style>
+        /* Estilos específicos para o changelog */
+        .changelog-header {
+            background: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            border-left: 4px solid #0073aa;
+        }
+
+        .changelog-header h1 {
+            color: #23282d;
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .changelog-header p {
+            color: #666;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .version-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            border-left: 4px solid #0073aa;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .version-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .version-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .version-number {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #23282d;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .version-number i {
+            color: #0073aa;
+            font-size: 1.2rem;
+        }
+
+        .version-tag {
+            background: #0073aa;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .version-date {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .change-item {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 12px 0;
+            border-left: 3px solid #28a745;
+            transition: all 0.3s ease;
+        }
+
+        .change-item:hover {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .change-item.bugfix {
+            border-left-color: #dc3545;
+        }
+
+        .change-item.feature {
+            border-left-color: #0073aa;
+        }
+
+        .change-item.improvement {
+            border-left-color: #ffc107;
+        }
+
+        .change-type {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-right: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(0, 115, 170, 0.1);
+            color: #0073aa;
+        }
+
+        .change-item.bugfix .change-type {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        .change-item.feature .change-type {
+            background: rgba(0, 115, 170, 0.1);
+            color: #0073aa;
+        }
+
+        .change-item.improvement .change-type {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+
+        .change-content {
+            margin-top: 8px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .change-content strong {
+            color: #23282d;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .back-button .btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            color: #23282d;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button .btn:hover {
+            background: #0073aa;
+            color: white;
+            border-color: #0073aa;
+        }
+
+        @media (max-width: 768px) {
+            .version-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .version-number {
+                font-size: 1.2rem;
+            }
+
+            .changelog-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .back-button {
+                position: static;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header WordPress Style -->
+    <header class="wp-header">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="site-branding">
+                        <img src="https://rno.gms.stte.com.br/v3/images/logo.jpg" alt="Logo STTE" class="site-logo">
+                        <div class="site-title-group">
+                            <h1 class="site-title">Changelog</h1>
+                            <p class="site-description">Histórico de Atualizações - Sistema NOC</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <nav class="main-navigation">
+                        <ul class="nav-menu">
+                            <li><a href="index.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                            <li><a href="changelog.html" class="nav-link active"><i class="fas fa-history"></i> Changelog</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="col-auto">
+                    <div class="header-actions">
+                        <a href="index.html" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="wp-content-wrapper">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Main Content -->
+                <main class="wp-main-content col-12">
+                    <!-- Changelog Header -->
+                    <div class="changelog-header">
+                        <h1><i class="fas fa-history"></i> Histórico de Atualizações</h1>
+                        <p>Acompanhe todas as mudanças e melhorias implementadas no Sistema NOC</p>
+                    </div>
+
+                    <!-- Versão 1.3.0 -->
+                    <div class="version-item">
+                        <div class="version-header">
+                            <div class="version-number">
+                                <i class="fas fa-star"></i>
+                                Versão 1.3.0
+                                <span class="version-tag">Atual</span>
+                            </div>
+                            <div class="version-date">12 de Julho 2025</div>
+                        </div>
+                        
+                        <div class="change-item improvement">
+                            <div class="change-type">Melhoria</div>
+                            <div class="change-content">
+                                <strong>SLA Inteligente:</strong> O SLA agora fica verde quando o técnico está atuando, mesmo que tenha passado do tempo limite. Isso melhora a precisão do monitoramento operacional.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item bugfix">
+                            <div class="change-type">Correção</div>
+                            <div class="change-content">
+                                <strong>Relatório TXT:</strong> Corrigido problema de duplicidade de hora no campo "DATA E HORA". Agora o relatório exibe corretamente a data e hora sem repetições.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Sistema de Changelog:</strong> Implementada página completa de changelog para acompanhar todas as atualizações do sistema de forma organizada e profissional.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Versão 1.2.0 -->
+                    <div class="version-item">
+                        <div class="version-header">
+                            <div class="version-number">
+                                <i class="fas fa-chart-bar"></i>
+                                Versão 1.2.0
+                            </div>
+                            <div class="version-date">11 de Julho 2025</div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Sistema de Backup:</strong> Implementado sistema automático de backup dos dados para garantir a segurança e integridade das informações.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Gráficos Interativos:</strong> Adicionados gráficos dinâmicos para visualização dos dados de forma mais intuitiva e informativa.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item improvement">
+                            <div class="change-type">Melhoria</div>
+                            <div class="change-content">
+                                <strong>Cache Inteligente:</strong> Sistema de cache otimizado para melhorar a performance e reduzir o tempo de carregamento dos dados.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Versão 1.1.0 -->
+                    <div class="version-item">
+                        <div class="version-header">
+                            <div class="version-number">
+                                <i class="fas fa-filter"></i>
+                                Versão 1.1.0
+                            </div>
+                            <div class="version-date">10 de Julho 2025</div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Filtros Avançados:</strong> Implementados filtros por região, fase, tipo de AMI e alarmes para facilitar a busca e análise dos dados.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item improvement">
+                            <div class="change-type">Melhoria</div>
+                            <div class="change-content">
+                                <strong>Interface Responsiva:</strong> Melhorada a responsividade para dispositivos móveis, garantindo uma experiência consistente em todos os dispositivos.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item bugfix">
+                            <div class="change-type">Correção</div>
+                            <div class="change-content">
+                                <strong>Processamento de Dados:</strong> Corrigidos problemas na importação de arquivos Excel, melhorando a estabilidade do sistema.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Versão 1.0.0 -->
+                    <div class="version-item">
+                        <div class="version-header">
+                            <div class="version-number">
+                                <i class="fas fa-rocket"></i>
+                                Versão 1.0.0
+                            </div>
+                            <div class="version-date">9 de Julho 2025</div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Dashboard Principal:</strong> Interface principal com visualização completa dos dados do NOC, incluindo KPIs e métricas importantes.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Importação de Dados:</strong> Sistema de importação de arquivos Excel do GMS para carregar dados de acionamentos automaticamente.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Relatórios:</strong> Geração de relatórios em formato TXT e Excel para facilitar a análise e compartilhamento de informações.
+                            </div>
+                        </div>
+                        
+                        <div class="change-item feature">
+                            <div class="change-type">Nova Funcionalidade</div>
+                            <div class="change-content">
+                                <strong>Cálculo de SLA:</strong> Sistema automático de cálculo de SLA e tempo decorrido para monitoramento de performance operacional.
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer WordPress Style -->
+    <footer class="wp-footer">
+        <div class="container-fluid">
+            <div class="footer-flex">
+                <div class="footer-info">
+                    <p>&copy; 2025 Sistema NOC - STTE Telecomunicações. Todos os direitos reservados.</p>
+                </div>
+                <div class="footer-center">
+                    <p>Desenvolvido com <i class="fas fa-heart" style="color: #dc3545;"></i> para otimizar operações</p>
+                </div>
+                <div class="footer-info">
+                    <p>Versão 1.3.0 | <a href="changelog.html">Changelog</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="changelog-manager.js"></script>
+</body>
+</html> 

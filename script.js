@@ -546,13 +546,28 @@ function calculateSLAandTempo(item) {
     const slaConfig = getSLAConfig(item.tipoSite, item.alarmes);
     const tempoFormatado = formatTempo(tempoDecorrido);
 
+    // Verificar se o técnico está atuando
+    const fase = (item.fase || '').toLowerCase();
+    const isTecnicoAtuando = fase.includes('atuando') || 
+                            fase.includes('gmg móvel') || 
+                            fase.includes('gmg movel') ||
+                            fase.includes('técnico atuando') ||
+                            fase.includes('tecnico atuando');
+
     let slaClass = 'good';
-    if (horasDecorridas > slaConfig.critico) {
-        slaClass = 'critical';
-    } else if (horasDecorridas > slaConfig.warning) {
-        slaClass = 'warning';
-    } else if (horasDecorridas > slaConfig.caution) {
-        slaClass = 'caution';
+    
+    // Se o técnico está atuando, sempre considerar como "good" (verde)
+    if (isTecnicoAtuando) {
+        slaClass = 'good';
+    } else {
+        // Aplicar regras normais de SLA apenas se não estiver atuando
+        if (horasDecorridas > slaConfig.critico) {
+            slaClass = 'critical';
+        } else if (horasDecorridas > slaConfig.warning) {
+            slaClass = 'warning';
+        } else if (horasDecorridas > slaConfig.caution) {
+            slaClass = 'caution';
+        }
     }
 
     return {
@@ -979,7 +994,22 @@ function downloadReport() {
         reportContent += `TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}\n`;
         reportContent += `FASE: ${item.fase || 'N/A'}\n`;
         reportContent += `REGIÃO: ${item.regiao || 'N/A'}\n`;
-        reportContent += `DATA E HORA: ${formatDate(item.dataAcion) || 'N/A'}\n\n`;
+        let dataHora = '';
+        if (item.dataAcion) {
+            // Verifica se dataAcion já contém hora (ex: '11/07/2025 23:06:00')
+            if (/\d{2}[:h]\d{2}/.test(item.dataAcion)) {
+                dataHora = item.dataAcion;
+            } else if (item.horaAcion) {
+                dataHora = `${item.dataAcion} ${item.horaAcion}`;
+            } else {
+                dataHora = item.dataAcion;
+            }
+        } else if (item.horaAcion) {
+            dataHora = item.horaAcion;
+        } else {
+            dataHora = 'N/A';
+        }
+        reportContent += `DATA E HORA: ${dataHora}\n\n`;
     });
 
     // Download do arquivo
