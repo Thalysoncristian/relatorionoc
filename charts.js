@@ -1,5 +1,5 @@
 // Sistema de Gráficos - Dashboard de Acionamentos STTE
-// Versão: 2.0.0
+// Versão: 3.0.0
 // Usando Chart.js
 
 class DashboardCharts {
@@ -7,7 +7,12 @@ class DashboardCharts {
         this.charts = {
             sites: null,
             tecnicos: null,
-            sla: null
+            sla: null,
+            tiposFalha: null,
+            regioes: null,
+            criticidade: null,
+            evolucaoTemporal: null,
+            concessionarias: null
         };
         this.currentData = [];
         this.isChartsMode = false;
@@ -67,11 +72,57 @@ class DashboardCharts {
                 </div>
             </div>
             <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-bolt"></i> Tipos de Falha Mais Comuns</h5>
+                        <div class="chart-container">
+                            <canvas id="tiposFalhaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-map-marker-alt"></i> Acionamentos por Região</h5>
+                        <div class="chart-container">
+                            <canvas id="regioesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-exclamation-circle"></i> Distribuição por Criticidade</h5>
+                        <div class="chart-container">
+                            <canvas id="criticidadeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-building"></i> Acionamentos por Concessionária</h5>
+                        <div class="chart-container">
+                            <canvas id="concessionariasChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
                 <div class="col-md-12">
                     <div class="chart-card">
                         <h5><i class="fas fa-clock"></i> SLAs Perdidas vs Cumpridas</h5>
                         <div class="chart-container">
                             <canvas id="slaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="chart-card">
+                        <h5><i class="fas fa-chart-line"></i> Evolução Temporal dos Acionamentos</h5>
+                        <div class="chart-container">
+                            <canvas id="evolucaoTemporalChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -168,6 +219,11 @@ class DashboardCharts {
             this.createSitesChart();
             this.createTecnicosChart();
             this.createSLAChart();
+            this.createTiposFalhaChart();
+            this.createRegioesChart();
+            this.createCriticidadeChart();
+            this.createConcessionariasChart();
+            this.createEvolucaoTemporalChart();
             
             console.log('✅ Gráficos criados com sucesso');
         }, 200);
@@ -434,6 +490,350 @@ class DashboardCharts {
         }
     }
 
+    // Gráfico de Tipos de Falha Mais Comuns (Doughnut Chart)
+    createTiposFalhaChart() {
+        const canvas = document.getElementById('tiposFalhaChart');
+        if (!canvas) {
+            console.warn('❌ Canvas tiposFalhaChart não encontrado');
+            return;
+        }
+
+        try {
+            this.charts.tiposFalha = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57',
+                            '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 11
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+            console.log('✅ Gráfico de Tipos de Falha criado');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Tipos de Falha:', error);
+        }
+    }
+
+    // Gráfico de Acionamentos por Região (Polar Area Chart)
+    createRegioesChart() {
+        const canvas = document.getElementById('regioesChart');
+        if (!canvas) {
+            console.warn('❌ Canvas regioesChart não encontrado');
+            return;
+        }
+
+        try {
+            this.charts.regioes = new Chart(canvas, {
+                type: 'polarArea',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            'rgba(255, 107, 107, 0.7)',
+                            'rgba(78, 205, 196, 0.7)',
+                            'rgba(69, 183, 209, 0.7)',
+                            'rgba(150, 206, 180, 0.7)',
+                            'rgba(254, 202, 87, 0.7)'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 11
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    return `${label}: ${value} acionamentos`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+            console.log('✅ Gráfico de Regiões criado');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Regiões:', error);
+        }
+    }
+
+    // Gráfico de Distribuição por Criticidade (Pie Chart)
+    createCriticidadeChart() {
+        const canvas = document.getElementById('criticidadeChart');
+        if (!canvas) {
+            console.warn('❌ Canvas criticidadeChart não encontrado');
+            return;
+        }
+
+        try {
+            this.charts.criticidade = new Chart(canvas, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#28a745', // Baixa - Verde
+                            '#ffc107', // Média - Amarelo
+                            '#dc3545'  // Alta - Vermelho
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 11
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+            console.log('✅ Gráfico de Criticidade criado');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Criticidade:', error);
+        }
+    }
+
+    // Gráfico de Acionamentos por Concessionária (Horizontal Bar Chart)
+    createConcessionariasChart() {
+        const canvas = document.getElementById('concessionariasChart');
+        if (!canvas) {
+            console.warn('❌ Canvas concessionariasChart não encontrado');
+            return;
+        }
+
+        try {
+            this.charts.concessionarias = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Quantidade de Acionamentos',
+                        data: [],
+                        backgroundColor: '#6f42c1',
+                        borderColor: '#5a2d91',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.x;
+                                    return `${label}: ${value} acionamentos`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Acionamentos'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Concessionárias'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart',
+                        delay: function(context) {
+                            return context.dataIndex * 100;
+                        }
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+            console.log('✅ Gráfico de Concessionárias criado');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Concessionárias:', error);
+        }
+    }
+
+    // Gráfico de Evolução Temporal dos Acionamentos (Line Chart)
+    createEvolucaoTemporalChart() {
+        const canvas = document.getElementById('evolucaoTemporalChart');
+        if (!canvas) {
+            console.warn('❌ Canvas evolucaoTemporalChart não encontrado');
+            return;
+        }
+
+        try {
+            this.charts.evolucaoTemporal = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Acionamentos por Dia',
+                        data: [],
+                        borderColor: '#17a2b8',
+                        backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#17a2b8',
+                        pointBorderColor: '#138496',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value} acionamentos`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Data'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Acionamentos'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart',
+                        delay: function(context) {
+                            return context.dataIndex * 50;
+                        }
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+            console.log('✅ Gráfico de Evolução Temporal criado');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Evolução Temporal:', error);
+        }
+    }
+
     // Atualizar todos os gráficos com dados atuais
     updateCharts() {
         console.log('📊 Atualizando gráficos...');
@@ -457,6 +857,11 @@ class DashboardCharts {
         this.updateSitesChart();
         this.updateTecnicosChart();
         this.updateSLAChart();
+        this.updateTiposFalhaChart();
+        this.updateRegioesChart();
+        this.updateCriticidadeChart();
+        this.updateConcessionariasChart();
+        this.updateEvolucaoTemporalChart();
         
         // Garantir que todos os containers tenham a classe loaded
         this.markAllChartsAsLoaded();
@@ -574,6 +979,175 @@ class DashboardCharts {
         }
     }
 
+    // Atualizar gráfico de tipos de falha
+    updateTiposFalhaChart() {
+        if (!this.charts.tiposFalha) return;
+
+        console.log('📊 Atualizando gráfico de tipos de falha...');
+
+        const tiposFalhaCount = {};
+        this.currentData.forEach(item => {
+            const tipoFalha = item.alarmes || item.tecnologia || 'Falha Desconhecida';
+            tiposFalhaCount[tipoFalha] = (tiposFalhaCount[tipoFalha] || 0) + 1;
+        });
+
+        // Ordenar por quantidade e pegar top 8
+        const sortedTiposFalha = Object.entries(tiposFalhaCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 8);
+
+        const tiposFalha = sortedTiposFalha.map(([name]) => name);
+        const values = sortedTiposFalha.map(([, value]) => value);
+
+        console.log('📊 Top 8 tipos de falha:', tiposFalha);
+        console.log('📊 Quantidade por tipo:', values);
+
+        try {
+            this.charts.tiposFalha.data.labels = tiposFalha;
+            this.charts.tiposFalha.data.datasets[0].data = values;
+            this.charts.tiposFalha.update('active');
+            console.log('✅ Gráfico de tipos de falha atualizado');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de tipos de falha:', error);
+        }
+    }
+
+    // Atualizar gráfico de regiões
+    updateRegioesChart() {
+        if (!this.charts.regioes) return;
+
+        console.log('📊 Atualizando gráfico de regiões...');
+
+        const regioesCount = {};
+        this.currentData.forEach(item => {
+            const regiao = item.regiao || 'Região Desconhecida';
+            regioesCount[regiao] = (regioesCount[regiao] || 0) + 1;
+        });
+
+        // Ordenar por quantidade
+        const sortedRegioes = Object.entries(regioesCount)
+            .sort(([,a], [,b]) => b - a);
+
+        const regioes = sortedRegioes.map(([name]) => name);
+        const values = sortedRegioes.map(([, value]) => value);
+
+        console.log('📊 Regiões com acionamentos:', regioes);
+        console.log('📊 Quantidade por região:', values);
+
+        try {
+            this.charts.regioes.data.labels = regioes;
+            this.charts.regioes.data.datasets[0].data = values;
+            this.charts.regioes.update('active');
+            console.log('✅ Gráfico de regiões atualizado');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de regiões:', error);
+        }
+    }
+
+    // Atualizar gráfico de criticidade
+    updateCriticidadeChart() {
+        if (!this.charts.criticidade) return;
+
+        console.log('📊 Atualizando gráfico de criticidade...');
+
+        const criticidadeCount = {};
+        this.currentData.forEach(item => {
+            const criticidade = item.criticidade || 'Não Definida';
+            criticidadeCount[criticidade] = (criticidadeCount[criticidade] || 0) + 1;
+        });
+
+        // Ordenar por criticidade (BAIXA, MEDIA, ALTA)
+        const criticidadeOrder = { 'BAIXA': 1, 'MEDIA': 2, 'ALTA': 3 };
+        const sortedCriticidade = Object.entries(criticidadeCount)
+            .sort(([a], [b]) => (criticidadeOrder[a] || 4) - (criticidadeOrder[b] || 4));
+
+        const criticidades = sortedCriticidade.map(([name]) => name);
+        const values = sortedCriticidade.map(([, value]) => value);
+
+        console.log('📊 Distribuição por criticidade:', criticidades);
+        console.log('📊 Quantidade por criticidade:', values);
+
+        try {
+            this.charts.criticidade.data.labels = criticidades;
+            this.charts.criticidade.data.datasets[0].data = values;
+            this.charts.criticidade.update('active');
+            console.log('✅ Gráfico de criticidade atualizado');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de criticidade:', error);
+        }
+    }
+
+    // Atualizar gráfico de concessionárias
+    updateConcessionariasChart() {
+        if (!this.charts.concessionarias) return;
+
+        console.log('📊 Atualizando gráfico de concessionárias...');
+
+        const concessionariasCount = {};
+        this.currentData.forEach(item => {
+            const concessionaria = item.concessionaria || 'Sem Concessionária';
+            concessionariasCount[concessionaria] = (concessionariasCount[concessionaria] || 0) + 1;
+        });
+
+        // Ordenar por quantidade e pegar top 10
+        const sortedConcessionarias = Object.entries(concessionariasCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10);
+
+        const concessionarias = sortedConcessionarias.map(([name]) => name);
+        const values = sortedConcessionarias.map(([, value]) => value);
+
+        console.log('📊 Top 10 concessionárias:', concessionarias);
+        console.log('📊 Quantidade por concessionária:', values);
+
+        try {
+            this.charts.concessionarias.data.labels = concessionarias;
+            this.charts.concessionarias.data.datasets[0].data = values;
+            this.charts.concessionarias.update('active');
+            console.log('✅ Gráfico de concessionárias atualizado');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de concessionárias:', error);
+        }
+    }
+
+    // Atualizar gráfico de evolução temporal
+    updateEvolucaoTemporalChart() {
+        if (!this.charts.evolucaoTemporal) return;
+
+        console.log('📊 Atualizando gráfico de evolução temporal...');
+
+        const dataCount = {};
+        this.currentData.forEach(item => {
+            const data = this.formatDateForChart(item.dataCadast || item.dataAcion);
+            if (data && data !== 'Sem Data') {
+                dataCount[data] = (dataCount[data] || 0) + 1;
+            }
+        });
+
+        // Ordenar por data
+        const sortedData = Object.entries(dataCount)
+            .sort(([a], [b]) => {
+                const dateA = this.parseDateTime(a);
+                const dateB = this.parseDateTime(b);
+                return dateA - dateB;
+            });
+
+        const datas = sortedData.map(([name]) => name);
+        const values = sortedData.map(([, value]) => value);
+
+        console.log('📊 Evolução temporal:', datas);
+        console.log('📊 Acionamentos por dia:', values);
+
+        try {
+            this.charts.evolucaoTemporal.data.labels = datas;
+            this.charts.evolucaoTemporal.data.datasets[0].data = values;
+            this.charts.evolucaoTemporal.update('active');
+            console.log('✅ Gráfico de evolução temporal atualizado');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de evolução temporal:', error);
+        }
+    }
+
     // Mostrar gráficos vazios
     showEmptyCharts() {
         console.log('📊 Mostrando gráficos vazios...');
@@ -596,6 +1170,36 @@ class DashboardCharts {
             this.charts.sla.data.datasets[0].data = [0];
             this.charts.sla.data.datasets[1].data = [0];
             this.charts.sla.update('none'); // Sem animação para dados vazios
+        }
+
+        if (this.charts.tiposFalha) {
+            this.charts.tiposFalha.data.labels = ['Sem dados'];
+            this.charts.tiposFalha.data.datasets[0].data = [0];
+            this.charts.tiposFalha.update('none');
+        }
+
+        if (this.charts.regioes) {
+            this.charts.regioes.data.labels = ['Sem dados'];
+            this.charts.regioes.data.datasets[0].data = [0];
+            this.charts.regioes.update('none');
+        }
+
+        if (this.charts.criticidade) {
+            this.charts.criticidade.data.labels = ['Sem dados'];
+            this.charts.criticidade.data.datasets[0].data = [0];
+            this.charts.criticidade.update('none');
+        }
+
+        if (this.charts.concessionarias) {
+            this.charts.concessionarias.data.labels = ['Sem dados'];
+            this.charts.concessionarias.data.datasets[0].data = [0];
+            this.charts.concessionarias.update('none');
+        }
+
+        if (this.charts.evolucaoTemporal) {
+            this.charts.evolucaoTemporal.data.labels = ['Sem dados'];
+            this.charts.evolucaoTemporal.data.datasets[0].data = [0];
+            this.charts.evolucaoTemporal.update('none');
         }
         
         console.log('✅ Gráficos vazios exibidos');
@@ -693,7 +1297,8 @@ class DashboardCharts {
     // Marcar todos os gráficos como carregados
     markAllChartsAsLoaded() {
         const chartContainers = [
-            'sitesChart', 'tecnicosChart', 'slaChart'
+            'sitesChart', 'tecnicosChart', 'slaChart', 'tiposFalhaChart', 
+            'regioesChart', 'criticidadeChart', 'concessionariasChart', 'evolucaoTemporalChart'
         ];
         chartContainers.forEach(containerId => {
             const container = document.getElementById(containerId);

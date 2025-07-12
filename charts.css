@@ -85,6 +85,35 @@
     height: 220px;
 }
 
+/* Novos gráficos */
+#sitesChart {
+    height: 220px;
+}
+
+#tecnicosChart {
+    height: 220px;
+}
+
+#tiposFalhaChart {
+    height: 220px;
+}
+
+#regioesChart {
+    height: 220px;
+}
+
+#criticidadeChart {
+    height: 220px;
+}
+
+#concessionariasChart {
+    height: 220px;
+}
+
+#evolucaoTemporalChart {
+    height: 250px;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .chart-container {
@@ -94,11 +123,18 @@
     #statusChart,
     #regionChart,
     #alarmChart,
-    #slaChart {
+    #slaChart,
+    #sitesChart,
+    #tecnicosChart,
+    #tiposFalhaChart,
+    #regioesChart,
+    #criticidadeChart,
+    #concessionariasChart {
         height: 150px;
     }
     
-    #timelineChart {
+    #timelineChart,
+    #evolucaoTemporalChart {
         height: 175px;
     }
     
@@ -120,11 +156,18 @@
     #statusChart,
     #regionChart,
     #alarmChart,
-    #slaChart {
+    #slaChart,
+    #sitesChart,
+    #tecnicosChart,
+    #tiposFalhaChart,
+    #regioesChart,
+    #criticidadeChart,
+    #concessionariasChart {
         height: 125px;
     }
     
-    #timelineChart {
+    #timelineChart,
+    #evolucaoTemporalChart {
         height: 150px;
     }
 }

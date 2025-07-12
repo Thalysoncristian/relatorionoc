@@ -322,15 +322,20 @@ function updateDashboard() {
 
 // Atualizar KPIs
 function updateKPIs() {
-    const totalAcionamentos = dashboardData.length;
-    const emAndamento = dashboardData.filter(item => {
+    updateKPIsWithData(dashboardData);
+}
+
+// Atualizar KPIs com dados específicos (filtrados ou originais)
+function updateKPIsWithData(data) {
+    const totalAcionamentos = data.length;
+    const emAndamento = data.filter(item => {
         const fase = (item.fase || '').toUpperCase();
         return fase.includes('ATUANDO') || fase.includes('GMG MOVEL') || fase.includes('GMG MÓVEL') || fase.includes('GMG MOVE');
     }).length;
-    const concluidos = dashboardData.filter(item => 
+    const concluidos = data.filter(item => 
         item.fase && item.fase.toLowerCase().includes('concluido')
     ).length;
-    const criticos = dashboardData.filter(item => {
+    const criticos = data.filter(item => {
         const slaInfo = calculateSLAandTempo(item);
         return slaInfo.slaClass === 'critical';
     }).length;
@@ -428,6 +433,9 @@ function filterData() {
     // Atualizar tabela
     updateTable(filteredData);
     
+    // Atualizar KPIs com dados filtrados
+    updateKPIsWithData(filteredData);
+    
     // Atualizar gráficos se estiver no modo gráficos
     if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
         console.log('📊 Atualizando gráficos com dados filtrados...');
@@ -448,6 +456,9 @@ function clearFilters() {
     
     // Restaurar dados originais
     updateTable(dashboardData);
+    
+    // Restaurar KPIs originais
+    updateKPIs();
     
     // Atualizar gráficos se estiver no modo gráficos
     if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
@@ -561,12 +572,12 @@ function calculateSLAandTempo(item) {
         slaClass = 'good';
     } else {
         // Aplicar regras normais de SLA apenas se não estiver atuando
-        if (horasDecorridas > slaConfig.critico) {
-            slaClass = 'critical';
-        } else if (horasDecorridas > slaConfig.warning) {
-            slaClass = 'warning';
-        } else if (horasDecorridas > slaConfig.caution) {
-            slaClass = 'caution';
+    if (horasDecorridas > slaConfig.critico) {
+        slaClass = 'critical';
+    } else if (horasDecorridas > slaConfig.warning) {
+        slaClass = 'warning';
+    } else if (horasDecorridas > slaConfig.caution) {
+        slaClass = 'caution';
         }
     }
 
