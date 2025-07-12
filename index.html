@@ -28,14 +28,14 @@
                 <div class="col">
                     <nav class="main-navigation">
                         <ul class="nav-menu">
-                            <li><a href="#dashboard" class="nav-link active" onclick="toggleDashboardMode()"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                            <li><a href="#dashboard" class="nav-link active" onclick="showDashboard()"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                             <li>
-                                <a href="#" class="nav-link" onclick="updateFromGMS()">
+                                <a href="#" class="nav-link nav-link-update" onclick="updateFromGMS()">
                                     <i class="fas fa-sync-alt"></i> Atualizar
                                 </a>
                             </li>
                             <li>
-                                <a href="changelog.html" class="nav-link">
+                                <a href="#changelog" class="nav-link" onclick="showChangelog()">
                                     <i class="fas fa-history"></i> Changelog
                                 </a>
                             </li>
@@ -49,6 +49,7 @@
                             <i class="fas fa-upload"></i> Carregar Relatório
                         </button>
                         <input type="file" id="fileInput" accept=".xls,.xlsx" class="d-none">
+
                     </div>
                 </div>
             </div>
@@ -192,6 +193,9 @@
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5><i class="fas fa-table"></i> Dados Detalhados</h5>
                                         <div class="table-actions">
+                                            <button class="btn btn-primary me-2" onclick="toggleDashboardMode()">
+                                                <i class="fas fa-chart-bar"></i> Ver Gráficos
+                                            </button>
                                             <button class="btn btn-success btn-export-header" onclick="downloadReport()">
                                                 <i class="fas fa-file-text"></i> Relatório TXT
                                             </button>
@@ -229,6 +233,11 @@
                                 <div class="charts-card">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5><i class="fas fa-chart-bar"></i> Gráficos de Corretivos</h5>
+                                        <div class="charts-actions">
+                                            <button class="btn btn-secondary" onclick="toggleDashboardMode()">
+                                                <i class="fas fa-table"></i> Ver Tabela
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6 mb-4">
@@ -298,6 +307,11 @@
                                 <div class="charts-card">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5><i class="fas fa-chart-pie"></i> Gráficos de Preventivas</h5>
+                                        <div class="charts-actions">
+                                            <button class="btn btn-secondary" onclick="toggleDashboardMode()">
+                                                <i class="fas fa-table"></i> Ver Tabela
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6 mb-4">
@@ -346,6 +360,204 @@
                         <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-upload"></i> Carregar Relatório
                         </button>
+                    </div>
+
+                    <!-- Changelog Content -->
+                    <div id="changelog" class="changelog d-none">
+                        <!-- Changelog Header -->
+                        <div class="changelog-header">
+                            <h1><i class="fas fa-history"></i> Histórico de Atualizações</h1>
+                            <p>Acompanhe todas as mudanças e melhorias implementadas no Sistema NOC</p>
+                        </div>
+
+                        <!-- Versão 1.4.0 -->
+                        <div class="version-item">
+                            <div class="version-header">
+                                <div class="version-number">
+                                    <i class="fas fa-upload"></i>
+                                    Versão 1.4.0
+                                    <span class="version-tag">Atual</span>
+                                </div>
+                                <div class="version-date">12 de Julho 2025</div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Sistema de Arraste Universal:</strong> Implementado sistema de arraste de arquivos Excel que funciona sempre, independentemente do modo visual, com feedback de cursor e processamento automático.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item improvement">
+                                <div class="change-type">Melhoria</div>
+                                <div class="change-content">
+                                    <strong>Sistema de Notificações Empilhadas:</strong> Notificações agora se empilham verticalmente sem sobreposição, com animações suaves e limite de 5 notificações simultâneas.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Modo Visual de Arraste:</strong> Modo visual opcional com borda azul e mensagem que pode ser ativado via botão "Atualizar" e desativado com ESC, clique ou timeout.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item improvement">
+                                <div class="change-type">Melhoria</div>
+                                <div class="change-content">
+                                    <strong>Controle de Modo de Exibição:</strong> Sistema agora mantém o modo atual (tabela ou gráficos) ao carregar dados, sem alternar automaticamente para gráficos.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item bugfix">
+                                <div class="change-type">Correção</div>
+                                <div class="change-content">
+                                    <strong>Gráficos de Preventivas:</strong> Corrigida lógica de exibição para mostrar apenas gráficos apropriados conforme o tipo de dados (preventivas ou corretivos).
+                                </div>
+                            </div>
+                            
+                            <div class="change-item improvement">
+                                <div class="change-type">Melhoria</div>
+                                <div class="change-content">
+                                    <strong>Extensão AQ1:</strong> Sistema de extração e comparação de datas AQ1, BP1 e BQ1 para priorizar previsões mais recentes e aplicar cores corretas.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item bugfix">
+                                <div class="change-type">Correção</div>
+                                <div class="change-content">
+                                    <strong>Formatação de Datas:</strong> Padronizada formatação de data/hora para remover segundos e manter consistência visual em toda a interface.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Versão 1.3.0 -->
+                        <div class="version-item">
+                            <div class="version-header">
+                                <div class="version-number">
+                                    <i class="fas fa-star"></i>
+                                    Versão 1.3.0
+                                </div>
+                                <div class="version-date">12 de Julho 2025</div>
+                            </div>
+                                
+                            <div class="change-item improvement">
+                                <div class="change-type">Melhoria</div>
+                                <div class="change-content">
+                                    <strong>SLA Inteligente:</strong> O SLA agora fica verde quando o técnico está atuando, mesmo que tenha passado do tempo limite. Isso melhora a precisão do monitoramento operacional.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item bugfix">
+                                <div class="change-type">Correção</div>
+                                <div class="change-content">
+                                    <strong>Relatório TXT:</strong> Corrigido problema de duplicidade de hora no campo "DATA E HORA". Agora o relatório exibe corretamente a data e hora sem repetições.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Sistema de Changelog:</strong> Implementada página completa de changelog para acompanhar todas as atualizações do sistema de forma organizada e profissional.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Versão 1.2.0 -->
+                        <div class="version-item">
+                            <div class="version-header">
+                                <div class="version-number">
+                                    <i class="fas fa-chart-bar"></i>
+                                    Versão 1.2.0
+                                </div>
+                                <div class="version-date">11 de Julho 2025</div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Sistema de Backup:</strong> Implementado sistema automático de backup dos dados para garantir a segurança e integridade das informações.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Gráficos Interativos:</strong> Adicionados gráficos dinâmicos para visualização dos dados de forma mais intuitiva e informativa.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item improvement">
+                                <div class="change-type">Melhoria</div>
+                                <div class="change-content">
+                                    <strong>Cache Inteligente:</strong> Sistema de cache otimizado para melhorar a performance e reduzir o tempo de carregamento dos dados.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Versão 1.1.0 -->
+                        <div class="version-item">
+                            <div class="version-header">
+                                <div class="version-number">
+                                    <i class="fas fa-filter"></i>
+                                    Versão 1.1.0
+                                </div>
+                                <div class="version-date">10 de Julho 2025</div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Filtros Avançados:</strong> Implementados filtros por região, fase, tipo de AMI e alarmes para facilitar a busca e análise dos dados.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item improvement">
+                                <div class="change-type">Melhoria</div>
+                                <div class="change-content">
+                                    <strong>Interface Responsiva:</strong> Melhorada a responsividade para dispositivos móveis, garantindo uma experiência consistente em todos os dispositivos.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item bugfix">
+                                <div class="change-type">Correção</div>
+                                <div class="change-content">
+                                    <strong>Processamento de Dados:</strong> Corrigidos problemas na importação de arquivos Excel, melhorando a estabilidade do sistema.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Versão 1.0.0 -->
+                        <div class="version-item">
+                            <div class="version-header">
+                                <div class="version-number">
+                                    <i class="fas fa-rocket"></i>
+                                    Versão 1.0.0
+                                </div>
+                                <div class="version-date">09 de Julho 2025</div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Dashboard Inicial:</strong> Lançamento do sistema de dashboard para análise de acionamentos do NOC com interface moderna e intuitiva.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>Importação de Dados:</strong> Sistema de importação de arquivos Excel para processamento e análise de dados de acionamentos.
+                                </div>
+                            </div>
+                            
+                            <div class="change-item feature">
+                                <div class="change-type">Nova Funcionalidade</div>
+                                <div class="change-content">
+                                    <strong>KPIs Operacionais:</strong> Indicadores-chave de performance para monitoramento de acionamentos, incluindo total, em andamento, concluídos e críticos.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </main>
             </div>

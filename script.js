@@ -11,10 +11,29 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeGlobalDropZone();
     initializeNotificationContainer();
     
-    // Tentar carregar dados do cache primeiro
-    if (!loadFromCache()) {
-        showEmptyState();
-    }
+    // Verificar se há dados no cache imediatamente
+    checkAndLoadCache();
+    
+    // Verificar periodicamente se há dados no cache (para casos de navegação)
+    setInterval(() => {
+        if (dashboardData.length === 0) {
+            checkAndLoadCache();
+        }
+    }, 2000); // Verificar a cada 2 segundos
+    
+    // Detectar quando a página volta a ter foco (quando volta do changelog)
+    window.addEventListener('focus', function() {
+        if (dashboardData.length === 0) {
+            checkAndLoadCache();
+        }
+    });
+    
+    // Detectar quando a página é carregada (incluindo quando volta do changelog)
+    window.addEventListener('pageshow', function(event) {
+        if (dashboardData.length === 0) {
+            checkAndLoadCache();
+        }
+    });
     
     // Criar backup inicial
     setTimeout(() => {
@@ -24,8 +43,89 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 3000);
 });
 
+// Função para verificar e carregar cache
+function checkAndLoadCache() {
+    const cachedData = localStorage.getItem('gmsCache');
+    
+    if (cachedData) {
+        try {
+            const parsed = JSON.parse(cachedData);
+            const cacheAge = new Date() - new Date(parsed.timestamp);
+            const maxAge = 30 * 60 * 1000; // 30 minutos
+            
+            if (cacheAge < maxAge && parsed.data && parsed.data.length > 0) {
+                if (loadFromCache()) {
+                    showSuccessMessage('✅ Dados carregados automaticamente do cache!');
+                    return true;
+                }
+            } else {
+                // Cache expirado ou vazio
+                showEmptyState();
+            }
+        } catch (error) {
+            console.error('Erro na verificação do cache:', error);
+            showEmptyState();
+        }
+    } else {
+        // Nenhum cache encontrado
+        showEmptyState();
+    }
+    return false;
+}
+
 // Função para alternar entre modo tabela e gráficos
 // Implementada no charts.js
+
+// Função para mostrar changelog
+function showChangelog() {
+    // Ocultar todas as seções
+    document.getElementById('dashboard').classList.add('d-none');
+    document.getElementById('emptyState').classList.add('d-none');
+    document.getElementById('changelog').classList.remove('d-none');
+    
+    // Atualizar navegação
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    // Ativar link do changelog
+    const changelogLink = document.querySelector('a[href="#changelog"]');
+    if (changelogLink) {
+        changelogLink.classList.add('active');
+    }
+}
+
+// Função para mostrar dashboard
+function showDashboard() {
+    // Verificar se há dados antes de mostrar o dashboard
+    if (dashboardData.length === 0) {
+        // Tentar carregar do cache se não há dados na memória
+        if (loadFromCache()) {
+            // Dados carregados do cache com sucesso
+        } else {
+            showEmptyState();
+            return;
+        }
+    }
+    
+    // Ocultar todas as seções
+    document.getElementById('changelog').classList.add('d-none');
+    document.getElementById('emptyState').classList.add('d-none');
+    document.getElementById('dashboard').classList.remove('d-none');
+    
+    // Atualizar navegação
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => link.classList.remove('active'));
+    
+    // Ativar link do dashboard
+    const dashboardLink = document.querySelector('a[href="#dashboard"]');
+    if (dashboardLink) {
+        dashboardLink.classList.add('active');
+    }
+}
+
+// Tornar funções globais
+window.showChangelog = showChangelog;
+window.showDashboard = showDashboard;
 
 // Inicializar navegação
 function initializeNavigation() {
@@ -49,18 +149,16 @@ function initializeNavigation() {
             // Para links externos, deixa o comportamento padrão (abrir nova aba)
         });
     });
+    
+
 }
 
 // Mostrar seção específica
 function showSection(sectionName) {
-    // Por enquanto, apenas mostra o dashboard
-    // Você pode expandir isso para mostrar diferentes seções
     if (sectionName === 'dashboard') {
-        if (dashboardData.length > 0) {
-            showDashboard();
-        } else {
-            showEmptyState();
-        }
+        showDashboard();
+    } else if (sectionName === 'changelog') {
+        showChangelog();
     }
 }
 
@@ -1000,20 +1098,19 @@ function showLoading() {
     document.getElementById('loading').classList.remove('d-none');
     document.getElementById('dashboard').classList.add('d-none');
     document.getElementById('emptyState').classList.add('d-none');
+    document.getElementById('changelog').classList.add('d-none');
 }
 
 function hideLoading() {
     document.getElementById('loading').classList.add('d-none');
 }
 
-function showDashboard() {
-    document.getElementById('dashboard').classList.remove('d-none');
-    document.getElementById('emptyState').classList.add('d-none');
-}
+// Função showDashboard removida - agora implementada acima com navegação completa
 
 function showEmptyState() {
     document.getElementById('emptyState').classList.remove('d-none');
     document.getElementById('dashboard').classList.add('d-none');
+    document.getElementById('changelog').classList.add('d-none');
 }
 
 // Função para atualizar tabela
@@ -1323,16 +1420,19 @@ function showErrorMessage(message) {
 // Função para carregar dados do cache
 function loadFromCache() {
     const cachedData = localStorage.getItem('gmsCache');
+    
     if (cachedData) {
         try {
             const parsed = JSON.parse(cachedData);
             const cacheAge = new Date() - new Date(parsed.timestamp);
             const maxAge = 30 * 60 * 1000; // 30 minutos
             
-            if (cacheAge < maxAge) {
+            if (cacheAge < maxAge && parsed.data && parsed.data.length > 0) {
                 dashboardData = parsed.data;
                 // Garantir que os dados estejam disponíveis globalmente para os gráficos
                 window.dashboardData = parsed.data;
+                
+                // Atualizar dashboard e mostrar dados
                 updateDashboard();
                 showDashboard();
                 showCacheInfo(parsed.timestamp);
@@ -1353,7 +1453,7 @@ function loadFromCache() {
                 
                 return true;
             } else {
-                // Cache expirado, remover
+                // Cache expirado ou vazio, remover
                 localStorage.removeItem('gmsCache');
             }
         } catch (error) {
@@ -1417,6 +1517,8 @@ function clearCache() {
     
     showSuccessMessage('Cache e dados limpos com sucesso!');
 }
+
+// Função de debug removida - não é mais necessária
 
 // Download de relatório TXT
 function downloadReport() {

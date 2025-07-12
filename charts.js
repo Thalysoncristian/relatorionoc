@@ -119,6 +119,10 @@ class DashboardCharts {
         const preventivasSection = document.getElementById('preventivasChartsSection');
         const dashboardButton = document.querySelector('.nav-link[href="#dashboard"], .nav-link[href="#acionamentos"]');
         
+        // Atualizar botões de alternância
+        const tableToggleButton = document.querySelector('.table-actions .btn-primary');
+        const chartsToggleButtons = document.querySelectorAll('.charts-actions .btn-secondary');
+        
         if (this.isChartsMode) {
             // MODO GRÁFICOS: Esconder tabela, mostrar gráficos apropriados
             if (tableSection) {
@@ -146,6 +150,14 @@ class DashboardCharts {
                 }
             }
             
+            // Atualizar botões
+            if (tableToggleButton) {
+                tableToggleButton.innerHTML = '<i class="fas fa-chart-bar"></i> Ver Gráficos';
+            }
+            chartsToggleButtons.forEach(button => {
+                button.innerHTML = '<i class="fas fa-table"></i> Ver Tabela';
+            });
+            
             if (dashboardButton) {
                 dashboardButton.innerHTML = '<i class="fas fa-table"></i> Acionamentos';
                 dashboardButton.setAttribute('href', '#acionamentos');
@@ -162,6 +174,15 @@ class DashboardCharts {
             if (preventivasSection) {
                 preventivasSection.style.display = 'none';
             }
+            
+            // Atualizar botões
+            if (tableToggleButton) {
+                tableToggleButton.innerHTML = '<i class="fas fa-chart-bar"></i> Ver Gráficos';
+            }
+            chartsToggleButtons.forEach(button => {
+                button.innerHTML = '<i class="fas fa-table"></i> Ver Tabela';
+            });
+            
             if (dashboardButton) {
                 dashboardButton.innerHTML = '<i class="fas fa-chart-line"></i> Dashboard';
                 dashboardButton.setAttribute('href', '#dashboard');
@@ -1689,6 +1710,9 @@ window.dashboardCharts = dashboardCharts;
 function toggleDashboardMode() {
     dashboardCharts.toggleMode();
 }
+
+// Tornar função global
+window.toggleDashboardMode = toggleDashboardMode;
 
 // Inicializar quando DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {

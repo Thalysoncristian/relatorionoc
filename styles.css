@@ -927,4 +927,182 @@ body {
     background: #f44336;
     border-color: #f44336;
     color: white;
+}
+
+/* Estilos para o Changelog */
+.changelog {
+    padding: 20px 0;
+}
+
+.changelog-header {
+    background: #fff;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    text-align: center;
+    border-left: 4px solid #0073aa;
+}
+
+.changelog-header h1 {
+    color: #23282d;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.changelog-header p {
+    color: #666;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.version-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+    border-left: 4px solid #0073aa;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.version-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.version-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.version-number {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #23282d;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.version-number i {
+    color: #0073aa;
+    font-size: 1.2rem;
+}
+
+.version-tag {
+    background: #0073aa;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.version-date {
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.change-item {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 12px 0;
+    border-left: 3px solid #28a745;
+    transition: all 0.3s ease;
+}
+
+.change-item:hover {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.change-item.bugfix {
+    border-left-color: #dc3545;
+}
+
+.change-item.feature {
+    border-left-color: #0073aa;
+}
+
+.change-item.improvement {
+    border-left-color: #ffc107;
+}
+
+.change-type {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-right: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0, 115, 170, 0.1);
+    color: #0073aa;
+}
+
+.change-item.bugfix .change-type {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.change-item.feature .change-type {
+    background: rgba(0, 115, 170, 0.1);
+    color: #0073aa;
+}
+
+.change-item.improvement .change-type {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+.change-content {
+    margin-top: 8px;
+    color: #333;
+    line-height: 1.5;
+}
+
+.change-content strong {
+    color: #23282d;
+}
+
+@media (max-width: 768px) {
+    .version-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .version-number {
+        font-size: 1.2rem;
+    }
+
+    .changelog-header h1 {
+        font-size: 1.5rem;
+    }
 } 
+
+/* Estilo para destacar o botão Atualizar */
+.nav-link-update {
+    background: #0073aa !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 115, 170, 0.3) !important;
+}
+
+.nav-link-update:hover {
+    background: #005a87 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 115, 170, 0.4) !important;
+}
+
+.nav-link-update i {
+    /* Animação removida - ícone estático */
+}
