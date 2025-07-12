@@ -7,12 +7,16 @@ class DashboardCharts {
         this.charts = {
             sites: null,
             tecnicos: null,
-            sla: null,
             tiposFalha: null,
             regioes: null,
             criticidade: null,
             evolucaoTemporal: null,
-            concessionarias: null
+            concessionarias: null,
+            // Gráficos específicos para preventivas
+            preventivasFases: null,
+            preventivasTecnicos: null,
+            preventivasRegioes: null,
+            preventivasTipoSite: null
         };
         this.currentData = [];
         this.isChartsMode = false;
@@ -45,97 +49,17 @@ class DashboardCharts {
 
     // Criar containers para os gráficos
     createChartContainers() {
-        const dashboardContent = document.getElementById('dashboard');
-        if (!dashboardContent) return;
-
-        // Criar seção de gráficos
-        const chartsSection = document.createElement('div');
-        chartsSection.id = 'chartsSection';
-        chartsSection.className = 'charts-section d-none';
-        chartsSection.innerHTML = `
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-exclamation-triangle"></i> Sites que Mais Tiveram Falha</h5>
-                        <div class="chart-container">
-                            <canvas id="sitesChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-user-cog"></i> Técnicos que Mais Tiveram Acionamento</h5>
-                        <div class="chart-container">
-                            <canvas id="tecnicosChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-bolt"></i> Tipos de Falha Mais Comuns</h5>
-                        <div class="chart-container">
-                            <canvas id="tiposFalhaChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-map-marker-alt"></i> Acionamentos por Região</h5>
-                        <div class="chart-container">
-                            <canvas id="regioesChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-exclamation-circle"></i> Distribuição por Criticidade</h5>
-                        <div class="chart-container">
-                            <canvas id="criticidadeChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-building"></i> Acionamentos por Concessionária</h5>
-                        <div class="chart-container">
-                            <canvas id="concessionariasChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-clock"></i> SLAs Perdidas vs Cumpridas</h5>
-                        <div class="chart-container">
-                            <canvas id="slaChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="chart-card">
-                        <h5><i class="fas fa-chart-line"></i> Evolução Temporal dos Acionamentos</h5>
-                        <div class="chart-container">
-                            <canvas id="evolucaoTemporalChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Inserir após os filtros (que agora estão abaixo dos KPIs)
-        const filtersRow = dashboardContent.querySelector('.row.mb-4:nth-child(2)');
-        if (filtersRow) {
-            filtersRow.parentNode.insertBefore(chartsSection, filtersRow.nextSibling);
-        } else {
-            // Fallback: inserir no final do dashboard
-            dashboardContent.appendChild(chartsSection);
+        // Os containers já existem no HTML, não precisamos criá-los dinamicamente
+        // Apenas verificar se existem
+        const chartsSection = document.getElementById('chartsSection');
+        const preventivasSection = document.getElementById('preventivasChartsSection');
+        
+        if (!chartsSection) {
+            console.warn('❌ Seção de gráficos corretivos não encontrada no HTML');
+        }
+        
+        if (!preventivasSection) {
+            console.warn('❌ Seção de gráficos preventivas não encontrada no HTML');
         }
     }
 
@@ -143,10 +67,13 @@ class DashboardCharts {
     setupEventListeners() {
         // Listener para mudança de dados
         window.addEventListener('dashboardDataUpdated', () => {
-            if (this.isChartsMode) {
-                setTimeout(() => {
-                    this.updateCharts();
-                }, 100);
+            if (window.dashboardData && window.dashboardData.length > 0) {
+                this.currentData = window.dashboardData;
+                if (this.isChartsMode) {
+                    setTimeout(() => {
+                        this.updateCharts();
+                    }, 100);
+                }
             }
         });
         
@@ -158,38 +85,82 @@ class DashboardCharts {
                 }
             }, 1000);
         });
+        
+        // Listener para quando dados são carregados do cache
+        const checkForData = () => {
+            if (window.dashboardData && window.dashboardData.length > 0) {
+                this.currentData = window.dashboardData;
+                // Se estiver em modo gráfico, atualizar imediatamente
+                if (this.isChartsMode) {
+                    this.updateCharts();
+                }
+                return true; // Dados encontrados
+            }
+            return false; // Dados não encontrados
+        };
+        
+        // Verificar dados a cada 500ms por 10 segundos
+        let checkCount = 0;
+        const checkInterval = setInterval(() => {
+            const dataFound = checkForData();
+            checkCount++;
+            if (dataFound || checkCount >= 20) { // Parar se dados encontrados ou 10 segundos
+                clearInterval(checkInterval);
+            }
+        }, 500);
     }
 
     // Alternar entre modo tabela e gráficos
     toggleMode() {
         this.isChartsMode = !this.isChartsMode;
-        
-        const dashboardContent = document.getElementById('dashboard');
-        // Usar ID específico para a seção da tabela
+
         const tableSection = document.getElementById('tableSection');
         const chartsSection = document.getElementById('chartsSection');
+        const preventivasSection = document.getElementById('preventivasChartsSection');
         const dashboardButton = document.querySelector('.nav-link[href="#dashboard"], .nav-link[href="#acionamentos"]');
         
         if (this.isChartsMode) {
-            // Mostrar gráficos - esconder apenas a tabela
+            // MODO GRÁFICOS: Esconder tabela, mostrar gráficos apropriados
             if (tableSection) {
                 tableSection.style.display = 'none';
             }
-            if (chartsSection) {
-                chartsSection.classList.remove('d-none');
+            
+            // Verificar se há dados de preventivas para decidir quais gráficos mostrar
+            const hasPreventivas = this.currentData && this.currentData.some(item => item.tipoAMI === 'PREVENTIVA');
+            
+            if (hasPreventivas) {
+                // Mostrar gráficos de preventivas, ocultar gráficos de corretivos
+                if (chartsSection) {
+                    chartsSection.style.display = 'none';
+                }
+                if (preventivasSection) {
+                    preventivasSection.style.display = 'block';
+                }
+            } else {
+                // Mostrar gráficos de corretivos, ocultar gráficos de preventivas
+                if (chartsSection) {
+                    chartsSection.style.display = 'block';
+                }
+                if (preventivasSection) {
+                    preventivasSection.style.display = 'none';
+                }
             }
+            
             if (dashboardButton) {
                 dashboardButton.innerHTML = '<i class="fas fa-table"></i> Acionamentos';
                 dashboardButton.setAttribute('href', '#acionamentos');
             }
             this.updateCharts();
         } else {
-            // Mostrar tabela - esconder apenas os gráficos
+            // MODO TABELA: Mostrar tabela, esconder todos os gráficos
             if (tableSection) {
                 tableSection.style.display = 'block';
             }
             if (chartsSection) {
-                chartsSection.classList.add('d-none');
+                chartsSection.style.display = 'none';
+            }
+            if (preventivasSection) {
+                preventivasSection.style.display = 'none';
             }
             if (dashboardButton) {
                 dashboardButton.innerHTML = '<i class="fas fa-chart-line"></i> Dashboard';
@@ -203,12 +174,17 @@ class DashboardCharts {
         setTimeout(() => {
             this.createSitesChart();
             this.createTecnicosChart();
-            this.createSLAChart();
             this.createTiposFalhaChart();
             this.createRegioesChart();
             this.createCriticidadeChart();
             this.createConcessionariasChart();
             this.createEvolucaoTemporalChart();
+            
+            // Criar gráficos de preventivas
+            this.createPreventivasFasesChart();
+            this.createPreventivasTecnicosChart();
+            this.createPreventivasRegioesChart();
+            this.createPreventivasTipoSiteChart();
         }, 200);
     }
 
@@ -220,14 +196,30 @@ class DashboardCharts {
             return;
         }
 
+        // Verificar se já existe um gráfico neste canvas
+        if (this.charts.sites) {
+            console.warn('❌ Gráfico sites já existe, pulando criação');
+            return;
+        }
+
         try {
+            const siteCount = {};
+            this.currentData.forEach(item => {
+                const site = item.estacao || item.localidade || 'Site Desconhecido';
+                siteCount[site] = (siteCount[site] || 0) + 1;
+            });
+            const sortedSites = Object.entries(siteCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+            const sites = sortedSites.map(([name]) => name);
+            const values = sortedSites.map(([, value]) => value);
             this.charts.sites = new Chart(canvas, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: sites,
                     datasets: [{
                         label: 'Quantidade de Falhas',
-                        data: [],
+                        data: values,
                         borderColor: '#ff6b6b',
                         backgroundColor: 'rgba(255, 107, 107, 0.2)',
                         borderWidth: 3,
@@ -304,14 +296,30 @@ class DashboardCharts {
             return;
         }
 
+        // Verificar se já existe um gráfico neste canvas
+        if (this.charts.tecnicos) {
+            console.warn('❌ Gráfico tecnicos já existe, pulando criação');
+            return;
+        }
+
         try {
+            const tecnicoCount = {};
+            this.currentData.forEach(item => {
+                const tecnico = item.tecnico || 'Sem Técnico';
+                tecnicoCount[tecnico] = (tecnicoCount[tecnico] || 0) + 1;
+            });
+            const sortedTecnicos = Object.entries(tecnicoCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+            const tecnicos = sortedTecnicos.map(([name]) => name);
+            const values = sortedTecnicos.map(([, value]) => value);
             this.charts.tecnicos = new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: [],
+                    labels: tecnicos,
                     datasets: [{
                         label: 'Quantidade de Acionamentos',
-                        data: [],
+                        data: values,
                         backgroundColor: '#0073aa',
                         borderColor: '#005a87',
                         borderWidth: 1
@@ -376,100 +384,6 @@ class DashboardCharts {
         }
     }
 
-    // Gráfico de SLAs Perdidas vs Cumpridas (Barras Agrupadas)
-    createSLAChart() {
-        const canvas = document.getElementById('slaChart');
-        if (!canvas) {
-            console.warn('❌ Canvas slaChart não encontrado');
-            return;
-        }
-
-        try {
-            this.charts.sla = new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'SLAs Cumpridas',
-                            data: [],
-                            backgroundColor: '#28a745',
-                            borderColor: '#1e7e34',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'SLAs Perdidas',
-                            data: [],
-                            backgroundColor: '#dc3545',
-                            borderColor: '#c82333',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    return `${label}: ${value} acionamentos`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Estados'
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 0
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Quantidade de Acionamentos'
-                            },
-                            ticks: {
-                                stepSize: 1,
-                                callback: function(value) {
-                                    return Math.floor(value);
-                                }
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart',
-                        delay: function(context) {
-                            return context.dataIndex * 50;
-                        }
-                    }
-                }
-            });
-            
-            canvas.parentElement.classList.add('loaded');
-        } catch (error) {
-            console.error('❌ Erro ao criar gráfico de SLAs:', error);
-        }
-    }
-
     // Gráfico de Tipos de Falha Mais Comuns (Doughnut Chart)
     createTiposFalhaChart() {
         const canvas = document.getElementById('tiposFalhaChart');
@@ -478,13 +392,29 @@ class DashboardCharts {
             return;
         }
 
+        // Verificar se já existe um gráfico neste canvas
+        if (this.charts.tiposFalha) {
+            console.warn('❌ Gráfico tiposFalha já existe, pulando criação');
+            return;
+        }
+
         try {
+            const tiposFalhaCount = {};
+            this.currentData.forEach(item => {
+                const tipoFalha = item.alarmes || item.tecnologia || 'Falha Desconhecida';
+                tiposFalhaCount[tipoFalha] = (tiposFalhaCount[tipoFalha] || 0) + 1;
+            });
+            const sortedTiposFalha = Object.entries(tiposFalhaCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8);
+            const tiposFalha = sortedTiposFalha.map(([name]) => name);
+            const values = sortedTiposFalha.map(([, value]) => value);
             this.charts.tiposFalha = new Chart(canvas, {
                 type: 'doughnut',
                 data: {
-                    labels: [],
+                    labels: tiposFalha,
                     datasets: [{
-                        data: [],
+                        data: values,
                         backgroundColor: [
                             '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57',
                             '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43'
@@ -539,13 +469,28 @@ class DashboardCharts {
             return;
         }
 
+        // Verificar se já existe um gráfico neste canvas
+        if (this.charts.regioes) {
+            console.warn('❌ Gráfico regioes já existe, pulando criação');
+            return;
+        }
+
         try {
+            const regioesCount = {};
+            this.currentData.forEach(item => {
+                const regiao = item.regiao || 'Região Desconhecida';
+                regioesCount[regiao] = (regioesCount[regiao] || 0) + 1;
+            });
+            const sortedRegioes = Object.entries(regioesCount)
+                .sort(([,a], [,b]) => b - a);
+            const regioes = sortedRegioes.map(([name]) => name);
+            const values = sortedRegioes.map(([, value]) => value);
             this.charts.regioes = new Chart(canvas, {
                 type: 'polarArea',
                 data: {
-                    labels: [],
+                    labels: regioes,
                     datasets: [{
-                        data: [],
+                        data: values,
                         backgroundColor: [
                             'rgba(255, 107, 107, 0.7)',
                             'rgba(78, 205, 196, 0.7)',
@@ -601,13 +546,29 @@ class DashboardCharts {
             return;
         }
 
+        // Verificar se já existe um gráfico neste canvas
+        if (this.charts.criticidade) {
+            console.warn('❌ Gráfico criticidade já existe, pulando criação');
+            return;
+        }
+
         try {
+            const criticidadeCount = {};
+            this.currentData.forEach(item => {
+                const criticidade = item.criticidade || 'Não Definida';
+                criticidadeCount[criticidade] = (criticidadeCount[criticidade] || 0) + 1;
+            });
+            const criticidadeOrder = { 'BAIXA': 1, 'MEDIA': 2, 'ALTA': 3 };
+            const sortedCriticidade = Object.entries(criticidadeCount)
+                .sort(([a], [b]) => (criticidadeOrder[a] || 4) - (criticidadeOrder[b] || 4));
+            const criticidades = sortedCriticidade.map(([name]) => name);
+            const values = sortedCriticidade.map(([, value]) => value);
             this.charts.criticidade = new Chart(canvas, {
                 type: 'pie',
                 data: {
-                    labels: [],
+                    labels: criticidades,
                     datasets: [{
-                        data: [],
+                        data: values,
                         backgroundColor: [
                             '#28a745', // Baixa - Verde
                             '#ffc107', // Média - Amarelo
@@ -664,13 +625,23 @@ class DashboardCharts {
         }
 
         try {
+            const concessionariasCount = {};
+            this.currentData.forEach(item => {
+                const concessionaria = item.concessionaria || 'Sem Concessionária';
+                concessionariasCount[concessionaria] = (concessionariasCount[concessionaria] || 0) + 1;
+            });
+            const sortedConcessionarias = Object.entries(concessionariasCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+            const concessionarias = sortedConcessionarias.map(([name]) => name);
+            const values = sortedConcessionarias.map(([, value]) => value);
             this.charts.concessionarias = new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: [],
+                    labels: concessionarias,
                     datasets: [{
                         label: 'Quantidade de Acionamentos',
-                        data: [],
+                        data: values,
                         backgroundColor: '#6f42c1',
                         borderColor: '#5a2d91',
                         borderWidth: 1
@@ -734,13 +705,28 @@ class DashboardCharts {
         }
 
         try {
+            const dataCount = {};
+            this.currentData.forEach(item => {
+                const data = this.formatDateForChart(item.dataCadast || item.dataAcion);
+                if (data && data !== 'Sem Data') {
+                    dataCount[data] = (dataCount[data] || 0) + 1;
+                }
+            });
+            const sortedData = Object.entries(dataCount)
+                .sort(([a], [b]) => {
+                    const dateA = this.parseDateTime(a);
+                    const dateB = this.parseDateTime(b);
+                    return dateA - dateB;
+                });
+            const datas = sortedData.map(([name]) => name);
+            const values = sortedData.map(([, value]) => value);
             this.charts.evolucaoTemporal = new Chart(canvas, {
                 type: 'line',
                 data: {
-                    labels: [],
+                    labels: datas,
                     datasets: [{
                         label: 'Acionamentos por Dia',
-                        data: [],
+                        data: values,
                         borderColor: '#17a2b8',
                         backgroundColor: 'rgba(23, 162, 184, 0.1)',
                         borderWidth: 3,
@@ -809,33 +795,416 @@ class DashboardCharts {
         }
     }
 
+    // ===== GRÁFICOS ESPECÍFICOS PARA PREVENTIVAS =====
+
+    // Gráfico de Fases das Preventivas (Pizza)
+    createPreventivasFasesChart() {
+        const canvas = document.getElementById('preventivasFasesChart');
+        if (!canvas) {
+            console.warn('❌ Canvas preventivasFasesChart não encontrado');
+            return;
+        }
+
+        // Verificar se já existe um gráfico neste canvas
+        if (this.charts.preventivasFases) {
+            console.warn('❌ Gráfico preventivasFases já existe, pulando criação');
+            return;
+        }
+
+        try {
+            const fasesCount = {};
+            this.currentData.forEach(item => {
+                if (item.tipoAMI === 'PREVENTIVA') {
+                    const fase = item.fase || 'Sem Fase';
+                    fasesCount[fase] = (fasesCount[fase] || 0) + 1;
+                }
+            });
+
+            const fases = Object.keys(fasesCount);
+            const values = Object.values(fasesCount);
+
+            this.charts.preventivasFases = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: fases,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Fases das Preventivas:', error);
+        }
+    }
+
+    // Gráfico de Técnicos Responsáveis por Preventivas (Barras Horizontais)
+    createPreventivasTecnicosChart() {
+        const canvas = document.getElementById('preventivasTecnicosChart');
+        if (!canvas) {
+            console.warn('❌ Canvas preventivasTecnicosChart não encontrado');
+            return;
+        }
+
+        try {
+            const tecnicoCount = {};
+            this.currentData.forEach(item => {
+                if (item.tipoAMI === 'PREVENTIVA') {
+                    const tecnico = item.tecnico || 'Sem Técnico';
+                    tecnicoCount[tecnico] = (tecnicoCount[tecnico] || 0) + 1;
+                }
+            });
+
+            const sortedTecnicos = Object.entries(tecnicoCount)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8);
+            const tecnicos = sortedTecnicos.map(([name]) => name);
+            const values = sortedTecnicos.map(([, value]) => value);
+
+            this.charts.preventivasTecnicos = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: tecnicos,
+                    datasets: [{
+                        label: 'Preventivas por Técnico',
+                        data: values,
+                        backgroundColor: '#4BC0C0',
+                        borderColor: '#36A2EB',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.x;
+                                    return `${label}: ${value} preventivas`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Preventivas'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Técnicos'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart',
+                        delay: function(context) {
+                            return context.dataIndex * 100;
+                        }
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Técnicos das Preventivas:', error);
+        }
+    }
+
+    // Gráfico de Preventivas por Região (Pizza)
+    createPreventivasRegioesChart() {
+        const canvas = document.getElementById('preventivasRegioesChart');
+        if (!canvas) {
+            console.warn('❌ Canvas preventivasRegioesChart não encontrado');
+            return;
+        }
+
+        try {
+            const regioesCount = {};
+            this.currentData.forEach(item => {
+                if (item.tipoAMI === 'PREVENTIVA') {
+                    const regiao = item.regiao || 'Região Desconhecida';
+                    regioesCount[regiao] = (regioesCount[regiao] || 0) + 1;
+                }
+            });
+
+            const regioes = Object.keys(regioesCount);
+            const values = Object.values(regioesCount);
+
+            this.charts.preventivasRegioes = new Chart(canvas, {
+                type: 'pie',
+                data: {
+                    labels: regioes,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Regiões das Preventivas:', error);
+        }
+    }
+
+    // Gráfico de Preventivas por Tipo de Site (Barras Verticais)
+    createPreventivasTipoSiteChart() {
+        const canvas = document.getElementById('preventivasTipoSiteChart');
+        if (!canvas) {
+            console.warn('❌ Canvas preventivasTipoSiteChart não encontrado');
+            return;
+        }
+
+        try {
+            const tipoSiteCount = {};
+            this.currentData.forEach(item => {
+                if (item.tipoAMI === 'PREVENTIVA') {
+                    const tipoSite = item.tipoSite || 'Tipo Desconhecido';
+                    tipoSiteCount[tipoSite] = (tipoSiteCount[tipoSite] || 0) + 1;
+                }
+            });
+
+            const sortedTiposSite = Object.entries(tipoSiteCount)
+                .sort(([,a], [,b]) => b - a);
+            const tiposSite = sortedTiposSite.map(([name]) => name);
+            const values = sortedTiposSite.map(([, value]) => value);
+
+            this.charts.preventivasTipoSite = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: tiposSite,
+                    datasets: [{
+                        label: 'Preventivas por Tipo de Site',
+                        data: values,
+                        backgroundColor: '#9966FF',
+                        borderColor: '#7B68EE',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value} preventivas`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            title: {
+                                display: true,
+                                text: 'Tipos de Site'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantidade de Preventivas'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart',
+                        delay: function(context) {
+                            return context.dataIndex * 100;
+                        }
+                    }
+                }
+            });
+            
+            canvas.parentElement.classList.add('loaded');
+        } catch (error) {
+            console.error('❌ Erro ao criar gráfico de Tipos de Site das Preventivas:', error);
+        }
+    }
+
     // Atualizar todos os gráficos com dados atuais
     updateCharts() {
+        // Verificar se há dados de preventivas para mostrar a seção específica
+        this.checkPreventivasSection();
+
+        // Destruir gráficos antigos de forma mais robusta
+        this.destroyAllCharts();
         
-        if (!this.charts.sites) {
+        // Aguardar um pouco antes de recriar os gráficos
+        setTimeout(() => {
             this.createCharts();
-            return;
-        }
+        }, 200);
+    }
 
-        // Tentar obter dados de múltiplas fontes
-        this.currentData = window.dashboardData || [];
+    // Função para destruir todos os gráficos
+    destroyAllCharts() {
+        Object.keys(this.charts).forEach(key => {
+            if (this.charts[key] && typeof this.charts[key].destroy === 'function') {
+                try {
+                    this.charts[key].destroy();
+                } catch (error) {
+                    console.warn(`Erro ao destruir gráfico ${key}:`, error);
+                }
+            }
+            this.charts[key] = null;
+        });
         
-        if (this.currentData.length === 0) {
-            this.showEmptyCharts();
-            return;
-        }
+        // Limpar todos os canvas
+        const canvasIds = [
+            'sitesChart', 'tecnicosChart', 'tiposFalhaChart', 'regioesChart', 
+            'criticidadeChart', 'concessionariasChart', 'evolucaoTemporalChart',
+            'preventivasFasesChart', 'preventivasTecnicosChart', 
+            'preventivasRegioesChart', 'preventivasTipoSiteChart'
+        ];
+        
+        canvasIds.forEach(canvasId => {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+        });
+    }
 
-        this.updateSitesChart();
-        this.updateTecnicosChart();
-        this.updateSLAChart();
-        this.updateTiposFalhaChart();
-        this.updateRegioesChart();
-        this.updateCriticidadeChart();
-        this.updateConcessionariasChart();
-        this.updateEvolucaoTemporalChart();
+    // Verificar se deve mostrar a seção de preventivas
+    checkPreventivasSection() {
+        const preventivasSection = document.getElementById('preventivasChartsSection');
+        const chartsSection = document.getElementById('chartsSection');
+        if (!preventivasSection || !chartsSection) return;
+
+        // Verificar se há dados de preventivas nos dados atuais (filtrados ou não)
+        const hasPreventivas = this.currentData && this.currentData.some(item => item.tipoAMI === 'PREVENTIVA');
         
-        // Garantir que todos os containers tenham a classe loaded
-        this.markAllChartsAsLoaded();
+        if (hasPreventivas) {
+            // Se há preventivas, ocultar gráficos de corretivos e mostrar preventivas
+            chartsSection.style.display = 'none';
+            preventivasSection.style.display = 'block';
+        } else {
+            // Se não há preventivas, mostrar gráficos de corretivos e ocultar preventivas
+            chartsSection.style.display = 'block';
+            preventivasSection.style.display = 'none';
+        }
+    }
+
+    // Forçar exibição da seção de preventivas
+    showPreventivasSection() {
+        const preventivasSection = document.getElementById('preventivasChartsSection');
+        const chartsSection = document.getElementById('chartsSection');
+        if (preventivasSection && chartsSection) {
+            // Ocultar gráficos de corretivos
+            chartsSection.style.display = 'none';
+            // Só mostrar gráficos de preventivas se estiver em modo gráficos
+            if (this.isChartsMode) {
+                preventivasSection.style.display = 'block';
+            }
+        }
+    }
+
+    // Ocultar seção de preventivas
+    hidePreventivasSection() {
+        const preventivasSection = document.getElementById('preventivasChartsSection');
+        const chartsSection = document.getElementById('chartsSection');
+        if (preventivasSection && chartsSection) {
+            // Só mostrar gráficos de corretivos se estiver em modo gráficos
+            if (this.isChartsMode) {
+                chartsSection.style.display = 'block';
+            }
+            // Ocultar gráficos de preventivas
+            preventivasSection.style.display = 'none';
+        }
     }
 
     // Atualizar gráfico de sites que mais tiveram falha
@@ -889,43 +1258,6 @@ class DashboardCharts {
             this.charts.tecnicos.update('active');
         } catch (error) {
             console.error('❌ Erro ao atualizar gráfico de técnicos:', error);
-        }
-    }
-
-    // Atualizar gráfico de SLAs Perdidas vs Cumpridas
-    updateSLAChart() {
-        if (!this.charts.sla) return;
-
-        const slaData = {};
-        this.currentData.forEach(item => {
-            const regiao = item.regiao || 'Sem Estado';
-            if (!slaData[regiao]) {
-                slaData[regiao] = { cumpridas: 0, perdidas: 0 };
-            }
-            
-            const slaInfo = this.calculateSLA(item);
-            if (slaInfo.slaClass === 'critical') {
-                slaData[regiao].perdidas++;
-            } else {
-                slaData[regiao].cumpridas++;
-            }
-        });
-
-        // Ordenar por total de acionamentos
-        const sortedEstados = Object.entries(slaData)
-            .sort(([,a], [,b]) => (b.cumpridas + b.perdidas) - (a.cumpridas + a.perdidas));
-
-        const estados = sortedEstados.map(([name]) => name);
-        const cumpridas = sortedEstados.map(([, data]) => data.cumpridas);
-        const perdidas = sortedEstados.map(([, data]) => data.perdidas);
-
-        try {
-            this.charts.sla.data.labels = estados;
-            this.charts.sla.data.datasets[0].data = cumpridas;
-            this.charts.sla.data.datasets[1].data = perdidas;
-            this.charts.sla.update('active');
-        } catch (error) {
-            console.error('❌ Erro ao atualizar gráfico de SLAs:', error);
         }
     }
 
@@ -1068,6 +1400,109 @@ class DashboardCharts {
         }
     }
 
+    // ===== FUNÇÕES DE ATUALIZAÇÃO DOS GRÁFICOS DE PREVENTIVAS =====
+
+    // Atualizar gráfico de fases das preventivas
+    updatePreventivasFasesChart() {
+        if (!this.charts.preventivasFases) return;
+
+        const fasesCount = {};
+        this.currentData.forEach(item => {
+            if (item.tipoAMI === 'PREVENTIVA') {
+                const fase = item.fase || 'Sem Fase';
+                fasesCount[fase] = (fasesCount[fase] || 0) + 1;
+            }
+        });
+
+        const fases = Object.keys(fasesCount);
+        const values = Object.values(fasesCount);
+
+        try {
+            this.charts.preventivasFases.data.labels = fases;
+            this.charts.preventivasFases.data.datasets[0].data = values;
+            this.charts.preventivasFases.update('active');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de fases das preventivas:', error);
+        }
+    }
+
+    // Atualizar gráfico de técnicos das preventivas
+    updatePreventivasTecnicosChart() {
+        if (!this.charts.preventivasTecnicos) return;
+
+        const tecnicoCount = {};
+        this.currentData.forEach(item => {
+            if (item.tipoAMI === 'PREVENTIVA') {
+                const tecnico = item.tecnico || 'Sem Técnico';
+                tecnicoCount[tecnico] = (tecnicoCount[tecnico] || 0) + 1;
+            }
+        });
+
+        const sortedTecnicos = Object.entries(tecnicoCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 8);
+        const tecnicos = sortedTecnicos.map(([name]) => name);
+        const values = sortedTecnicos.map(([, value]) => value);
+
+        try {
+            this.charts.preventivasTecnicos.data.labels = tecnicos;
+            this.charts.preventivasTecnicos.data.datasets[0].data = values;
+            this.charts.preventivasTecnicos.update('active');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de técnicos das preventivas:', error);
+        }
+    }
+
+    // Atualizar gráfico de regiões das preventivas
+    updatePreventivasRegioesChart() {
+        if (!this.charts.preventivasRegioes) return;
+
+        const regioesCount = {};
+        this.currentData.forEach(item => {
+            if (item.tipoAMI === 'PREVENTIVA') {
+                const regiao = item.regiao || 'Região Desconhecida';
+                regioesCount[regiao] = (regioesCount[regiao] || 0) + 1;
+            }
+        });
+
+        const regioes = Object.keys(regioesCount);
+        const values = Object.values(regioesCount);
+
+        try {
+            this.charts.preventivasRegioes.data.labels = regioes;
+            this.charts.preventivasRegioes.data.datasets[0].data = values;
+            this.charts.preventivasRegioes.update('active');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de regiões das preventivas:', error);
+        }
+    }
+
+    // Atualizar gráfico de tipos de site das preventivas
+    updatePreventivasTipoSiteChart() {
+        if (!this.charts.preventivasTipoSite) return;
+
+        const tipoSiteCount = {};
+        this.currentData.forEach(item => {
+            if (item.tipoAMI === 'PREVENTIVA') {
+                const tipoSite = item.tipoSite || 'Tipo Desconhecido';
+                tipoSiteCount[tipoSite] = (tipoSiteCount[tipoSite] || 0) + 1;
+            }
+        });
+
+        const sortedTiposSite = Object.entries(tipoSiteCount)
+            .sort(([,a], [,b]) => b - a);
+        const tiposSite = sortedTiposSite.map(([name]) => name);
+        const values = sortedTiposSite.map(([, value]) => value);
+
+        try {
+            this.charts.preventivasTipoSite.data.labels = tiposSite;
+            this.charts.preventivasTipoSite.data.datasets[0].data = values;
+            this.charts.preventivasTipoSite.update('active');
+        } catch (error) {
+            console.error('❌ Erro ao atualizar gráfico de tipos de site das preventivas:', error);
+        }
+    }
+
     // Mostrar gráficos vazios
     showEmptyCharts() {
         
@@ -1084,13 +1519,6 @@ class DashboardCharts {
             this.charts.tecnicos.update('none'); // Sem animação para dados vazios
         }
         
-        if (this.charts.sla) {
-            this.charts.sla.data.labels = ['Sem dados'];
-            this.charts.sla.data.datasets[0].data = [0];
-            this.charts.sla.data.datasets[1].data = [0];
-            this.charts.sla.update('none'); // Sem animação para dados vazios
-        }
-
         if (this.charts.tiposFalha) {
             this.charts.tiposFalha.data.labels = ['Sem dados'];
             this.charts.tiposFalha.data.datasets[0].data = [0];
@@ -1119,6 +1547,31 @@ class DashboardCharts {
             this.charts.evolucaoTemporal.data.labels = ['Sem dados'];
             this.charts.evolucaoTemporal.data.datasets[0].data = [0];
             this.charts.evolucaoTemporal.update('none');
+        }
+
+        // Gráficos de preventivas vazios
+        if (this.charts.preventivasFases) {
+            this.charts.preventivasFases.data.labels = ['Sem dados'];
+            this.charts.preventivasFases.data.datasets[0].data = [0];
+            this.charts.preventivasFases.update('none');
+        }
+
+        if (this.charts.preventivasTecnicos) {
+            this.charts.preventivasTecnicos.data.labels = ['Sem dados'];
+            this.charts.preventivasTecnicos.data.datasets[0].data = [0];
+            this.charts.preventivasTecnicos.update('none');
+        }
+
+        if (this.charts.preventivasRegioes) {
+            this.charts.preventivasRegioes.data.labels = ['Sem dados'];
+            this.charts.preventivasRegioes.data.datasets[0].data = [0];
+            this.charts.preventivasRegioes.update('none');
+        }
+
+        if (this.charts.preventivasTipoSite) {
+            this.charts.preventivasTipoSite.data.labels = ['Sem dados'];
+            this.charts.preventivasTipoSite.data.datasets[0].data = [0];
+            this.charts.preventivasTipoSite.update('none');
         }
     }
 
@@ -1214,8 +1667,10 @@ class DashboardCharts {
     // Marcar todos os gráficos como carregados
     markAllChartsAsLoaded() {
         const chartContainers = [
-            'sitesChart', 'tecnicosChart', 'slaChart', 'tiposFalhaChart', 
-            'regioesChart', 'criticidadeChart', 'concessionariasChart', 'evolucaoTemporalChart'
+            'sitesChart', 'tecnicosChart', 'tiposFalhaChart', 
+            'regioesChart', 'criticidadeChart', 'concessionariasChart', 'evolucaoTemporalChart',
+            'preventivasFasesChart', 'preventivasTecnicosChart', 
+            'preventivasRegioesChart', 'preventivasTipoSiteChart'
         ];
         chartContainers.forEach(containerId => {
             const container = document.getElementById(containerId);
@@ -1237,6 +1692,7 @@ function toggleDashboardMode() {
 
 // Inicializar quando DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
+    
     dashboardCharts.init();
     
     // Redimensionar gráficos quando janela mudar de tamanho
@@ -1246,17 +1702,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Aguardar um pouco e verificar se os gráficos foram criados
     setTimeout(() => {
-        if (!dashboardCharts.charts.sites || !dashboardCharts.charts.tecnicos || !dashboardCharts.charts.sla) {
+        if (!dashboardCharts.charts.sites || !dashboardCharts.charts.tecnicos || !dashboardCharts.charts.tiposFalha) {
             dashboardCharts.createCharts();
         }
     }, 2000);
     
     // Verificar novamente após mais tempo se necessário
     setTimeout(() => {
-        if (!dashboardCharts.charts.sites || !dashboardCharts.charts.tecnicos || !dashboardCharts.charts.sla) {
+        if (!dashboardCharts.charts.sites || !dashboardCharts.charts.tecnicos || !dashboardCharts.charts.tiposFalha) {
             dashboardCharts.createChartContainers();
             dashboardCharts.createCharts();
         }
     }, 5000);
-}); 
+});
 

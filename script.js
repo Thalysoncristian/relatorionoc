@@ -1,10 +1,15 @@
 // Variáveis globais
 let dashboardData = [];
+let dropZoneActive = false;
+let notificationQueue = [];
+let notificationContainer = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileUpload();
     initializeNavigation();
+    initializeGlobalDropZone();
+    initializeNotificationContainer();
     
     // Tentar carregar dados do cache primeiro
     if (!loadFromCache()) {
@@ -65,10 +70,47 @@ function initializeFileUpload() {
     fileInput.addEventListener('change', handleFileUpload);
 }
 
+// Inicializar zona de drop global (sempre ativa)
+function initializeGlobalDropZone() {
+    // Adicionar event listeners globais para drag and drop
+    document.addEventListener('dragover', handleGlobalDragOver);
+    document.addEventListener('drop', handleGlobalDrop);
+    
+    // Adicionar event listener para clicar e desativar modo visual
+    document.addEventListener('click', handleGlobalClick);
+    
+    console.log('🌐 Zona de drop global inicializada - arraste arquivos Excel a qualquer momento');
+}
+
+// Inicializar container de notificações
+function initializeNotificationContainer() {
+    // Criar container para notificações
+    notificationContainer = document.createElement('div');
+    notificationContainer.id = 'notification-container';
+    notificationContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 400px;
+    `;
+    
+    document.body.appendChild(notificationContainer);
+    console.log('📢 Container de notificações inicializado');
+}
+
 // Manipular upload de arquivo
 function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Desativar modo visual de arraste se estiver ativo
+    if (dropZoneActive) {
+        deactivateDropZone();
+    }
 
     // Mostrar loading
     showLoading();
@@ -87,16 +129,37 @@ function handleFileUpload(event) {
                              file.name.toLowerCase().includes('gms') ||
                              file.name.toLowerCase().includes('excel.php');
             
+            // Verificar se são dados de preventivas
+            const isPreventivasFile = file.name.toLowerCase().includes('preventiva') || 
+                                     file.name.toLowerCase().includes('preventivo') ||
+                                     dashboardData.some(item => item.tipoAMI === 'PREVENTIVA');
+            
+            
+            
             if (isGMSFile) {
                 // Salvar no cache se for arquivo do GMS
                 const timestamp = new Date().toISOString();
                 const cacheData = {
                     timestamp: timestamp,
-                    data: dashboardData
+                    data: dashboardData,
+                    isPreventivas: isPreventivasFile
                 };
                 localStorage.setItem('gmsCache', JSON.stringify(cacheData));
                 showCacheInfo(timestamp);
-                showSuccessMessage('Arquivo do GMS importado e salvo no cache!');
+                
+                if (isPreventivasFile) {
+                    showSuccessMessage('✅ Arquivo de Preventivas importado com sucesso! Os gráficos específicos de preventivas estão disponíveis.');
+                    // Ativar automaticamente os gráficos de preventivas
+                    if (window.dashboardCharts) {
+                        window.dashboardCharts.showPreventivasSection();
+                    }
+                } else {
+                    showSuccessMessage('✅ Arquivo de Acionamentos Corretivos importado com sucesso!');
+                    // Ocultar gráficos de preventivas se for corretivo
+                    if (window.dashboardCharts) {
+                        window.dashboardCharts.hidePreventivasSection();
+                    }
+                }
             }
             
         } catch (error) {
@@ -130,9 +193,17 @@ function processExcelData(workbook) {
             return;
         }
 
+        // LIMPAR DADOS ANTIGOS ANTES DE CARREGAR NOVOS
+        dashboardData = [];
+        window.dashboardData = [];
+        
+        // Carregar novos dados
         dashboardData = processedData;
         // Garantir que os dados estejam disponíveis globalmente para os gráficos
         window.dashboardData = processedData;
+        
+
+        
         updateDashboard();
         hideLoading();
         showDashboard();
@@ -523,12 +594,26 @@ function updateDashboard() {
     // Disparar evento para atualizar gráficos se necessário
     window.dispatchEvent(new CustomEvent('dashboardDataUpdated'));
     
-    // Forçar atualização dos gráficos se estiverem em modo gráfico
-    if (typeof dashboardCharts !== 'undefined' && dashboardCharts.isChartsMode) {
-
-        setTimeout(() => {
-            dashboardCharts.updateCharts();
-        }, 500);
+    // Atualizar dados dos gráficos sempre que houver dados
+    if (window.dashboardCharts && dashboardData.length > 0) {
+        window.dashboardCharts.currentData = dashboardData;
+        
+        // Verificar se são dados de preventivas e mostrar seção específica
+        const hasPreventivas = dashboardData.some(item => item.tipoAMI === 'PREVENTIVA');
+        
+        if (hasPreventivas && window.dashboardCharts) {
+            window.dashboardCharts.showPreventivasSection();
+        } else if (window.dashboardCharts) {
+            window.dashboardCharts.hidePreventivasSection();
+        }
+        
+        // Manter o modo atual (não alternar automaticamente)
+        // Se estiver em modo gráficos, apenas atualizar
+        if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
+            setTimeout(() => {
+                window.dashboardCharts.updateCharts();
+            }, 500);
+        }
     }
 }
 
@@ -649,7 +734,6 @@ function filterData() {
     
     // Atualizar gráficos se estiver no modo gráficos
     if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
-    
         window.dashboardCharts.currentData = filteredData;
         window.dashboardCharts.updateCharts();
     }
@@ -673,7 +757,6 @@ function clearFilters() {
     
     // Atualizar gráficos se estiver no modo gráficos
     if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
-    
         window.dashboardCharts.currentData = dashboardData;
         window.dashboardCharts.updateCharts();
     }
@@ -966,18 +1049,24 @@ function activateDropZone() {
     const dashboard = document.getElementById('dashboard');
     const emptyState = document.getElementById('emptyState');
     
+    // Marcar como ativo
+    dropZoneActive = true;
+    console.log('🎯 Modo de arraste visual ativado');
+    
     // Adicionar classe de drop zone
     if (dashboard) dashboard.classList.add('drop-zone-active');
     if (emptyState) emptyState.classList.add('drop-zone-active');
     
-    // Adicionar event listeners para drag and drop
-    document.addEventListener('dragover', handleDragOver);
-    document.addEventListener('drop', handleDrop);
+    // Adicionar event listener apenas para tecla ESC
+    document.addEventListener('keydown', handleKeyDown);
     
-    // Remover drop zone após 30 segundos
+    // Mostrar mensagem com instruções
+    showInfoMessage('📁 Modo de arraste visual ativado! Arraste um arquivo Excel aqui ou pressione ESC para cancelar.');
+    
+    // Remover drop zone após 15 segundos
     setTimeout(() => {
         deactivateDropZone();
-    }, 30000);
+    }, 15000);
 }
 
 // Função para desativar área de drop
@@ -985,20 +1074,44 @@ function deactivateDropZone() {
     const dashboard = document.getElementById('dashboard');
     const emptyState = document.getElementById('emptyState');
     
+    // Marcar como inativo
+    dropZoneActive = false;
+    console.log('❌ Modo de arraste visual desativado');
+    
     if (dashboard) dashboard.classList.remove('drop-zone-active');
     if (emptyState) emptyState.classList.remove('drop-zone-active');
     
-    document.removeEventListener('dragover', handleDragOver);
-    document.removeEventListener('drop', handleDrop);
+    document.removeEventListener('keydown', handleKeyDown);
 }
 
-// Função para lidar com drag over
+// Função para lidar com drag over (modo visual)
 function handleDragOver(e) {
     e.preventDefault();
     e.stopPropagation();
 }
 
-// Função para lidar com drop de arquivo
+// Função para lidar com drag over global (sempre ativa)
+function handleGlobalDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Se não estiver no modo visual, mostrar feedback sutil
+    if (!dropZoneActive) {
+        document.body.style.cursor = 'copy';
+    }
+}
+
+
+
+// Função para lidar com teclas pressionadas
+function handleKeyDown(e) {
+    // Se pressionar ESC e o modo de arraste estiver ativo, desativar
+    if (e.key === 'Escape' && dropZoneActive) {
+        deactivateDropZone();
+    }
+}
+
+// Função para lidar com drop de arquivo (modo visual)
 function handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -1024,11 +1137,60 @@ function handleDrop(e) {
     deactivateDropZone();
 }
 
+// Função para lidar com drop de arquivo global (sempre ativa)
+function handleGlobalDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Restaurar cursor
+    document.body.style.cursor = 'default';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        
+        // Verificar se é um arquivo Excel
+        if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+            file.type === 'application/vnd.ms-excel' ||
+            file.name.toLowerCase().endsWith('.xlsx') ||
+            file.name.toLowerCase().endsWith('.xls')) {
+            
+            console.log('📁 Arquivo Excel detectado via drop global:', file.name);
+            
+            // Processar o arquivo
+            processDroppedFile(file);
+        } else {
+            showErrorMessage('Por favor, arraste apenas arquivos Excel (.xls ou .xlsx)');
+        }
+    }
+}
+
+// Função para lidar com clique global
+function handleGlobalClick(e) {
+    // Se o modo visual estiver ativo e não clicou no botão "Atualizar", desativar
+    if (dropZoneActive) {
+        const target = e.target;
+        const isUpdateButton = target.closest('a[onclick*="updateFromGMS"]') || 
+                              target.closest('button[onclick*="updateFromGMS"]') ||
+                              target.closest('.nav-link[onclick*="updateFromGMS"]');
+        
+        if (!isUpdateButton) {
+            console.log('🖱️ Clique detectado - desativando modo visual de arraste');
+            deactivateDropZone();
+        }
+    }
+}
+
 // Função para processar arquivo arrastado
 function processDroppedFile(file) {
     // Criar backup antes de processar arquivo
     if (typeof createBackup === 'function') {
         createBackup(`Antes de processar arquivo: ${file.name}`);
+    }
+    
+    // Desativar modo visual de arraste se estiver ativo
+    if (dropZoneActive) {
+        deactivateDropZone();
     }
     
     showLoading();
@@ -1073,67 +1235,89 @@ function processDroppedFile(file) {
     reader.readAsArrayBuffer(file);
 }
 
-// Função para mostrar mensagem informativa
-function showInfoMessage(message) {
+// Função unificada para mostrar notificações
+function showNotification(message, type = 'info', duration = 5000) {
+    if (!notificationContainer) {
+        console.warn('Container de notificações não inicializado');
+        return;
+    }
+    
     // Criar elemento de notificação
     const notification = document.createElement('div');
-    notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        <i class="fas fa-info-circle"></i> ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.cssText = `
+        min-width: 300px;
+        margin: 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
     `;
     
-    document.body.appendChild(notification);
+    // Definir ícone baseado no tipo
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'danger') icon = 'exclamation-triangle';
+    if (type === 'warning') icon = 'exclamation-circle';
     
-    // Remover automaticamente após 10 segundos
+    notification.innerHTML = `
+        <i class="fas fa-${icon}"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" onclick="removeNotification(this.parentElement)"></button>
+    `;
+    
+    // Adicionar ao container
+    notificationContainer.appendChild(notification);
+    
+    // Adicionar à fila
+    notificationQueue.push(notification);
+    
+    // Remover automaticamente após o tempo especificado
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
+        removeNotification(notification);
+    }, duration);
+    
+    // Limitar número máximo de notificações
+    if (notificationQueue.length > 5) {
+        const oldestNotification = notificationQueue.shift();
+        if (oldestNotification && oldestNotification.parentNode) {
+            oldestNotification.remove();
         }
-    }, 10000);
+    }
+}
+
+// Função para remover notificação
+function removeNotification(notification) {
+    if (notification && notification.parentNode) {
+        // Adicionar animação de saída
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+                // Remover da fila
+                const index = notificationQueue.indexOf(notification);
+                if (index > -1) {
+                    notificationQueue.splice(index, 1);
+                }
+            }
+        }, 300);
+    }
+}
+
+// Tornar função global para uso no HTML
+window.removeNotification = removeNotification;
+
+// Função para mostrar mensagem informativa
+function showInfoMessage(message) {
+    showNotification(message, 'info', 10000);
 }
 
 // Função para mostrar mensagem de sucesso
 function showSuccessMessage(message) {
-    // Criar elemento de notificação
-    const notification = document.createElement('div');
-    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        <i class="fas fa-check-circle"></i> ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Remover automaticamente após 5 segundos
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 5000);
+    showNotification(message, 'success', 5000);
 }
 
 // Função para mostrar mensagem de erro
 function showErrorMessage(message) {
-    // Criar elemento de notificação
-    const notification = document.createElement('div');
-    notification.className = 'alert alert-danger alert-dismissible fade show position-fixed';
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = `
-        <i class="fas fa-exclamation-triangle"></i> ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Remover automaticamente após 8 segundos
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 8000);
+    showNotification(message, 'danger', 8000);
 }
 
 // Função para carregar dados do cache
@@ -1152,6 +1336,21 @@ function loadFromCache() {
                 updateDashboard();
                 showDashboard();
                 showCacheInfo(parsed.timestamp);
+                
+                // Verificar se são dados de preventivas e mostrar seção específica
+                const isPreventivas = parsed.isPreventivas || dashboardData.some(item => item.tipoAMI === 'PREVENTIVA');
+                if (isPreventivas && window.dashboardCharts) {
+                    window.dashboardCharts.showPreventivasSection();
+                }
+                
+                // Atualizar gráficos se estiverem em modo gráfico
+                if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
+                    window.dashboardCharts.currentData = parsed.data;
+                    setTimeout(() => {
+                        window.dashboardCharts.updateCharts();
+                    }, 500);
+                }
+                
                 return true;
             } else {
                 // Cache expirado, remover
@@ -1203,7 +1402,20 @@ function getTimeAgo(date) {
 function clearCache() {
     localStorage.removeItem('gmsCache');
     document.getElementById('cacheInfo').style.display = 'none';
-    showSuccessMessage('Cache limpo com sucesso!');
+    
+    // Limpar dados atuais também
+    dashboardData = [];
+    window.dashboardData = [];
+    
+    // Ocultar gráficos de preventivas
+    if (window.dashboardCharts) {
+        window.dashboardCharts.hidePreventivasSection();
+    }
+    
+    // Mostrar estado vazio
+    showEmptyState();
+    
+    showSuccessMessage('Cache e dados limpos com sucesso!');
 }
 
 // Download de relatório TXT

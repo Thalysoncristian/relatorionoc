@@ -42,6 +42,141 @@
     width: 100%;
     height: 200px;
     position: relative;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    padding: 15px;
+    background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    border-color: #0073aa;
+    box-shadow: 0 4px 12px rgba(0,73,170,0.15);
+    transform: translateY(-1px);
+}
+
+/* Wrapper e títulos dos gráficos */
+.chart-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-title {
+    color: #23282d;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 6px;
+    border-left: 3px solid #0073aa;
+}
+
+.chart-title i {
+    color: #0073aa;
+    font-size: 1rem;
+}
+
+/* Cards das seções de gráficos */
+.charts-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid #e1e5e9;
+    margin-bottom: 20px;
+}
+
+.charts-card h5 {
+    color: #23282d;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.charts-card h5 i {
+    color: #0073aa;
+    font-size: 1.3rem;
+}
+
+/* Estilos específicos para gráficos de preventivas */
+#preventivasChartsSection .charts-card {
+    border-left: 4px solid #28a745;
+    background: linear-gradient(135deg, #fff 0%, #f8fff9 100%);
+}
+
+#preventivasChartsSection .charts-card h5 {
+    border-bottom-color: #28a745;
+    color: #155724;
+}
+
+#preventivasChartsSection .charts-card h5 i {
+    color: #28a745;
+}
+
+#preventivasChartsSection .chart-container {
+    border-color: #c3e6cb;
+    background: linear-gradient(135deg, #f8fff9 0%, #f0f8f0 100%);
+}
+
+#preventivasChartsSection .chart-container:hover {
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40,167,69,0.15);
+}
+
+#preventivasChartsSection .chart-title {
+    background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+    border-left-color: #28a745;
+    color: #155724;
+}
+
+#preventivasChartsSection .chart-title i {
+    color: #28a745;
+}
+
+/* Estilos específicos para gráficos de corretivos */
+#chartsSection .charts-card {
+    border-left: 4px solid #0073aa;
+    background: linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+}
+
+#chartsSection .charts-card h5 {
+    border-bottom-color: #0073aa;
+    color: #23282d;
+}
+
+#chartsSection .charts-card h5 i {
+    color: #0073aa;
+}
+
+#chartsSection .chart-container {
+    border-color: #b3d9ff;
+    background: linear-gradient(135deg, #f8fbff 0%, #f0f8ff 100%);
+}
+
+#chartsSection .chart-container:hover {
+    border-color: #0073aa;
+    box-shadow: 0 4px 12px rgba(0,115,170,0.15);
+}
+
+#chartsSection .chart-title {
+    background: linear-gradient(135deg, #f8fbff 0%, #e8f4ff 100%);
+    border-left-color: #0073aa;
+    color: #23282d;
+}
+
+#chartsSection .chart-title i {
+    color: #0073aa;
 }
 
 /* Gráficos específicos */
@@ -118,6 +253,22 @@
 @media (max-width: 768px) {
     .chart-container {
         height: 125px;
+        padding: 10px;
+        border-radius: 8px;
+    }
+    
+    .charts-card {
+        padding: 15px;
+    }
+    
+    .charts-card h5 {
+        font-size: 1rem;
+        margin-bottom: 15px;
+    }
+    
+    .chart-title {
+        font-size: 0.85rem;
+        padding: 6px 10px;
     }
     
     #statusChart,
@@ -151,6 +302,22 @@
 @media (max-width: 576px) {
     .chart-container {
         height: 100px;
+        padding: 8px;
+        border-radius: 6px;
+    }
+    
+    .charts-card {
+        padding: 12px;
+    }
+    
+    .charts-card h5 {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+    
+    .chart-title {
+        font-size: 0.8rem;
+        padding: 5px 8px;
     }
     
     #statusChart,
