@@ -115,7 +115,7 @@ function processExcelData(workbook) {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        console.log('Conteúdo lido do Excel:', jsonData);
+    
 
         if (!jsonData || jsonData.length === 0) {
             alert('O arquivo está vazio ou não possui dados válidos.');
@@ -145,6 +145,87 @@ function processExcelData(workbook) {
 
 // Processar dados brutos
 function processRawData(rawData) {
+    // Função para extrair data/hora de string tipo "PREVISAO: 12/07/2025 - 05:00 - ."
+    function extractDateTimeFromAQ1(aq1) {
+        if (!aq1 || typeof aq1 !== 'string') return null;
+        
+        
+        
+        // Regex para DD/MM/YYYY - HH:MM
+        let match = aq1.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s*-\s*(\d{2}:\d{2})/);
+        if (match) {
+            const result = `${match[1]} ${match[2]}`;
+                        return result;
+        }
+        
+        // Regex para DD/MM/YYYY HH:MM
+        match = aq1.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s+(\d{2}:\d{2})/);
+        if (match) {
+            return `${match[1]} ${match[2]}`;
+        }
+        
+        // Regex para YYYY-MM-DD HH:MM:SS (remove segundos)
+        match = aq1.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}):\d{2}/);
+        if (match) {
+            return `${match[1]} ${match[2]}`;
+        }
+        
+        // Regex para DD-MM-YYYY HH:MM:SS (remove segundos)
+        match = aq1.match(/(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}):\d{2}/);
+        if (match) {
+            return `${match[1]} ${match[2]}`;
+        }
+        
+        // Regex para DD/MM/YYYY HH:MM:SS (remove segundos)
+        match = aq1.match(/(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}):\d{2}/);
+        if (match) {
+            return `${match[1]} ${match[2]}`;
+        }
+        
+        // Apenas data DD/MM/YYYY
+        match = aq1.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
+        if (match) {
+            return match[1];
+        }
+        
+        // Apenas data YYYY-MM-DD
+        match = aq1.match(/(\d{4}-\d{2}-\d{2})/);
+        if (match) {
+            return match[1];
+        }
+        return null;
+    }
+    // Função para converter string data/hora para objeto Date
+    function parseDateTimeString(str) {
+        if (!str) return null;
+        
+        
+        
+        // DD/MM/YYYY HH:MM
+        let match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})[\sT]+(\d{2}):(\d{2})/);
+        if (match) {
+            return new Date(`${match[3]}-${match[2]}-${match[1]}T${match[4]}:${match[5]}:00`);
+        }
+        
+        // DD/MM/YYYY
+        match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+        if (match) {
+            return new Date(`${match[3]}-${match[2]}-${match[1]}T00:00:00`);
+        }
+        
+        // YYYY-MM-DD HH:MM:SS
+        match = str.match(/(\d{4})-(\d{2})-(\d{2})[\sT]+(\d{2}):(\d{2}):(\d{2})/);
+        if (match) {
+            return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`);
+        }
+        
+        // YYYY-MM-DD
+        match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            return new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00`);
+        }
+        return null;
+    }
     return rawData.filter(row => row.length > 0).map(row => {
         // Função para converter data Excel para Date
         const convertExcelDate = (excelDate) => {
@@ -205,10 +286,10 @@ function processRawData(rawData) {
                     const totalSeconds = Math.round((time % 1) * 86400);
                     const hours = Math.floor(totalSeconds / 3600);
                     const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    const seconds = totalSeconds % 60;
-                    timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
                 } else {
-                    timeStr = String(time).replace(/\./g, ':');
+                    // Se for string, remover segundos se existirem
+                    timeStr = String(time).replace(/\./g, ':').replace(/:\d{2}$/, '');
                 }
             }
             
@@ -216,6 +297,137 @@ function processRawData(rawData) {
         };
 
         // Mapear colunas baseado na estrutura do arquivo
+        // Função para extrair data/hora de string tipo "PREVISAO: 12/07/2025 - 05:00 - ."
+        function extractDateTimeFromAQ1(aq1) {
+            if (!aq1 || typeof aq1 !== 'string') return null;
+            // Regex para DD/MM/YYYY - HH:MM
+            let match = aq1.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s*-\s*(\d{2}:\d{2})/);
+            if (match) return `${match[1]} ${match[2]}`;
+            // Regex para DD/MM/YYYY HH:MM
+            match = aq1.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})\s+(\d{2}:\d{2})/);
+            if (match) return `${match[1]} ${match[2]}`;
+            // Regex para YYYY-MM-DD HH:MM:SS
+            match = aq1.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})/);
+            if (match) return `${match[1]} ${match[2]}`;
+            // Regex para DD-MM-YYYY HH:MM:SS
+            match = aq1.match(/(\d{2}-\d{2}-\d{4})\s+(\d{2}:\d{2}:\d{2})/);
+            if (match) return `${match[1]} ${match[2]}`;
+            // Apenas data
+            match = aq1.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
+            if (match) return match[1];
+            match = aq1.match(/(\d{4}-\d{2}-\d{2})/);
+            if (match) return match[1];
+            return null;
+        }
+        // Função para converter string data/hora para objeto Date
+        function parseDateTimeString(str) {
+            if (!str) return null;
+            // DD/MM/YYYY HH:MM
+            let match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})[\sT]+(\d{2}):(\d{2})/);
+            if (match) return new Date(`${match[3]}-${match[2]}-${match[1]}T${match[4]}:${match[5]}:00`);
+            // DD/MM/YYYY
+            match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+            if (match) return new Date(`${match[3]}-${match[2]}-${match[1]}T00:00:00`);
+            // YYYY-MM-DD HH:MM:SS
+            match = str.match(/(\d{4})-(\d{2})-(\d{2})[\sT]+(\d{2}):(\d{2}):(\d{2})/);
+            if (match) return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`);
+            // YYYY-MM-DD
+            match = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+            if (match) return new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00`);
+            return null;
+        }
+        // AQ1 = 41, BP1 = 67, BQ1 = 68
+        const aq1 = row[41] || '';
+        const bp1 = row[67] || '';
+        const bq1 = row[68] || '';
+        
+        // Verificar outras colunas que podem conter previsão
+        const outrasColunas = [];
+        for (let i = 0; i < row.length; i++) {
+            if (row[i] && typeof row[i] === 'string' && row[i].toLowerCase().includes('previs')) {
+                outrasColunas.push({ coluna: i, valor: row[i] });
+            }
+        }
+        let previsaoValidaAQ1 = false;
+        let dataHoraPrevisaoAQ1 = '';
+        
+
+        
+        // Montar data/hora combinada de BP1+BQ1
+        let bp1bq1Str = '';
+        let bp1bq1Date = null;
+        
+        if (bp1 && bq1) {
+            // Se BP1 é número Excel (data), converter primeiro
+            if (typeof bp1 === 'number' && bp1 > 30000) {
+                const bp1Date = new Date((bp1 - 25569 + 1) * 86400 * 1000);
+                const bp1DateStr = bp1Date.toLocaleDateString('pt-BR');
+                bp1bq1Str = `${bp1DateStr} ${bq1}`;
+            } else if (/\d{2}[:h]\d{2}/.test(bp1)) {
+                // Se BP1 já tem hora, não concatena
+                bp1bq1Str = bp1;
+            } else {
+                bp1bq1Str = `${bp1} ${bq1}`;
+            }
+        } else if (bp1) {
+            // Se só tem BP1, converter se for número Excel
+            if (typeof bp1 === 'number' && bp1 > 30000) {
+                const bp1Date = new Date((bp1 - 25569 + 1) * 86400 * 1000);
+                bp1bq1Str = bp1Date.toLocaleDateString('pt-BR');
+            } else {
+                bp1bq1Str = bp1;
+            }
+        } else if (bq1) {
+            bp1bq1Str = bq1;
+        }
+        
+
+        
+        // Procurar previsão em AQ1 e outras colunas
+        let previsaoEncontrada = null;
+        let previsaoDateStr = '';
+        let previsaoDate = null;
+        
+        // Primeiro, verificar AQ1
+        if (typeof aq1 === 'string' && aq1.toLowerCase().includes('previs')) {
+            previsaoEncontrada = { coluna: 41, valor: aq1 };
+            previsaoDateStr = extractDateTimeFromAQ1(aq1);
+            previsaoDate = parseDateTimeString(previsaoDateStr);
+        }
+        
+        // Se não encontrou em AQ1, verificar outras colunas
+        if (!previsaoEncontrada && outrasColunas.length > 0) {
+            for (const col of outrasColunas) {
+                const dateStr = extractDateTimeFromAQ1(col.valor);
+                const date = parseDateTimeString(dateStr);
+                if (date) {
+                    previsaoEncontrada = col;
+                    previsaoDateStr = dateStr;
+                    previsaoDate = date;
+                    break;
+                }
+            }
+        }
+        
+        // Processar a previsão encontrada
+        if (previsaoEncontrada) {
+            // Converter BP1+BQ1 para data se ainda não foi convertido
+            if (!bp1bq1Date) {
+                bp1bq1Date = parseDateTimeString(bp1bq1Str);
+            }
+            dataHoraPrevisaoAQ1 = previsaoDateStr || '';
+            
+
+            
+            // Só considera válido se previsão > BP1+BQ1 (ambos datas válidas)
+            if (previsaoDate && bp1bq1Date) {
+                if (previsaoDate > bp1bq1Date) {
+                    previsaoValidaAQ1 = true;
+                    
+
+                }
+            }
+        }
         return {
             id: row[0] || '',
             ami: row[1] || '',
@@ -275,11 +487,10 @@ function processRawData(rawData) {
                     let totalSeconds = Math.round((val % 1) * 86400);
                     let hours = Math.floor(totalSeconds / 3600);
                     let minutes = Math.floor((totalSeconds % 3600) / 60);
-                    let seconds = totalSeconds % 60;
-                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
                 }
                 if (typeof val === 'string') {
-                    return val.replace(/\./g, ':');
+                    return val.replace(/\./g, ':').replace(/:\d{2}$/, '');
                 }
                 return String(val);
             })(),
@@ -290,14 +501,15 @@ function processRawData(rawData) {
                     let totalSeconds = Math.round((val % 1) * 86400);
                     let hours = Math.floor(totalSeconds / 3600);
                     let minutes = Math.floor((totalSeconds % 3600) / 60);
-                    let seconds = totalSeconds % 60;
-                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
                 }
                 if (typeof val === 'string') {
-                    return val.replace(/\./g, ':');
+                    return val.replace(/\./g, ':').replace(/:\d{2}$/, '');
                 }
                 return String(val);
-            })()
+            })(),
+            previsaoValidaAQ1,
+            dataHoraPrevisaoAQ1
         };
     });
 }
@@ -313,7 +525,7 @@ function updateDashboard() {
     
     // Forçar atualização dos gráficos se estiverem em modo gráfico
     if (typeof dashboardCharts !== 'undefined' && dashboardCharts.isChartsMode) {
-        console.log('🔄 Forçando atualização dos gráficos...');
+
         setTimeout(() => {
             dashboardCharts.updateCharts();
         }, 500);
@@ -375,14 +587,14 @@ function setupFilterEventListeners() {
         if (select) {
             // Aplicar filtro quando seleção mudar
             select.addEventListener('change', () => {
-                console.log(`🔍 Filtro ${selectId} alterado para: ${select.value}`);
+        
                 filterData();
             });
             
             // Aplicar filtro quando Enter for pressionado
             select.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    console.log(`🔍 Enter pressionado no filtro ${selectId}`);
+        
                     filterData();
                 }
             });
@@ -427,8 +639,7 @@ function filterData() {
     if (tipoSite) filteredData = filteredData.filter(item => item.tipoSite === tipoSite);
     if (alarmes) filteredData = filteredData.filter(item => item.alarmes === alarmes);
 
-    console.log(`🔍 Aplicando filtros: ${filteredData.length} registros encontrados`);
-    console.log('🔍 Filtros aplicados:', { regiao, fase, tipoAMI, tipoSite, alarmes });
+
 
     // Atualizar tabela
     updateTable(filteredData);
@@ -438,7 +649,7 @@ function filterData() {
     
     // Atualizar gráficos se estiver no modo gráficos
     if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
-        console.log('📊 Atualizando gráficos com dados filtrados...');
+    
         window.dashboardCharts.currentData = filteredData;
         window.dashboardCharts.updateCharts();
     }
@@ -452,7 +663,7 @@ function clearFilters() {
     document.getElementById('filterTipoSite').value = '';
     document.getElementById('filterAlarmes').value = '';
     
-    console.log('🧹 Filtros limpos, restaurando dados originais...');
+
     
     // Restaurar dados originais
     updateTable(dashboardData);
@@ -462,7 +673,7 @@ function clearFilters() {
     
     // Atualizar gráficos se estiver no modo gráficos
     if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
-        console.log('📊 Restaurando gráficos com dados originais...');
+    
         window.dashboardCharts.currentData = dashboardData;
         window.dashboardCharts.updateCharts();
     }
@@ -479,9 +690,19 @@ function updateTable(data = dashboardData) {
         // Exibir só data, só hora, ou ambos, mas nunca dois horários
         let previsaoTec = '-';
         let previsaoTecClass = 'previsao-neutral';
-        if (item.dataPrevisaoTec && item.horaPrevisaoTec) {
+
+        
+        // NOVO: priorizar AQ1 se for previsão válida
+        if (item.previsaoValidaAQ1 && item.dataHoraPrevisaoAQ1) {
+            previsaoTec = item.dataHoraPrevisaoAQ1;
+            previsaoTecClass = getPrevisaoTecClass(item.dataHoraPrevisaoAQ1, ''); // Usar função de cores
+            
+
+        } else if (item.dataPrevisaoTec && item.horaPrevisaoTec) {
             previsaoTec = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
             previsaoTecClass = getPrevisaoTecClass(item.dataPrevisaoTec, item.horaPrevisaoTec);
+            
+
         } else if (item.dataPrevisaoTec) {
             previsaoTec = item.dataPrevisaoTec;
             previsaoTecClass = getPrevisaoTecClass(item.dataPrevisaoTec, '00:00:00');
@@ -489,6 +710,8 @@ function updateTable(data = dashboardData) {
             previsaoTec = item.horaPrevisaoTec;
             previsaoTecClass = getPrevisaoTecClass('', item.horaPrevisaoTec);
         }
+        
+
 
         // NOVO: Verificar se a fase é ATUANDO ou TECNICO ATUANDO COM GMG MOVEL/MÓVEL/MOVE
         const faseUpper = (item.fase || '').toUpperCase();
@@ -627,6 +850,8 @@ function parseDateTime(dateTimeStr) {
     const formats = [
         /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})/,
         /(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2}):(\d{2})/,
+        /(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/,  // Sem segundos - PRINCIPAL
+        /(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})/,   // Sem segundos
         /(\d{2})\/(\d{2})\/(\d{4})/,
         /(\d{2})-(\d{2})-(\d{4})/
     ];
@@ -635,8 +860,19 @@ function parseDateTime(dateTimeStr) {
         const match = dateTimeStr.match(format);
         if (match) {
             const [, day, month, year, hour = 0, minute = 0, second = 0] = match;
-            return new Date(year, month - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
+            const result = new Date(year, month - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
+            return result;
         }
+    }
+    
+    // Se não encontrou nenhum formato, tentar criar uma data simples
+    try {
+        const result = new Date(dateTimeStr);
+        if (!isNaN(result.getTime())) {
+            return result;
+        }
+    } catch (error) {
+        // Ignorar erro
     }
     
     return null;
@@ -1084,33 +1320,81 @@ function downloadExcel() {
 } 
 
 function getPrevisaoTecClass(data, hora) {
-    if (!data && !hora) return 'previsao-neutral';
-    // Montar Date a partir de data e hora
-    let dataStr = data || '';
-    let horaStr = hora || '00:00:00';
-    // Tentar montar Date
-    let dt = null;
-    if (dataStr) {
-        // Se data já está no formato DD/MM/YYYY
-        const match = dataStr.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-        if (match) {
-            const [, day, month, year] = match;
-            const [h, m, s] = horaStr.split(':').map(x => parseInt(x) || 0);
-            dt = new Date(year, month - 1, day, h, m, s);
+    // Sistema de cores otimizado ✅
+    
+    // Se temos data e hora combinadas (formato DD/MM/YYYY HH:MM)
+    if (data && data.includes(' ') && data.includes(':')) {
+        // Data já está no formato completo DD/MM/YYYY HH:MM
+        const dt = parseDateTime(data);
+        if (dt && !isNaN(dt.getTime())) {
+            const agora = new Date();
+            const diffMs = dt - agora;
+            
+            if (diffMs >= 3600 * 1000) {
+                // Mais de 1h para a previsão
+                return 'previsao-ok';
+            } else if (diffMs >= 0 && diffMs < 3600 * 1000) {
+                // Menos de 1h para a previsão
+                return 'previsao-warning';
+            } else if (diffMs < 0) {
+                // Já passou da previsão
+                return 'previsao-atraso';
+            }
         }
     }
-    if (!dt || isNaN(dt.getTime())) return 'previsao-neutral';
-    const agora = new Date();
-    const diffMs = dt - agora;
-    if (diffMs >= 3600 * 1000) {
-        // Mais de 1h para a previsão
-        return 'previsao-ok';
-    } else if (diffMs >= 0 && diffMs < 3600 * 1000) {
-        // Menos de 1h para a previsão
-        return 'previsao-warning';
-    } else if (diffMs < 0) {
-        // Já passou da previsão
-        return 'previsao-atraso';
+    
+    // Se temos data e hora separadas
+    if (data && hora) {
+        let dataStr = data || '';
+        let horaStr = hora || '00:00';
+        
+        // Tentar montar Date
+        let dt = null;
+        if (dataStr) {
+            // Se data já está no formato DD/MM/YYYY
+            const match = dataStr.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+            if (match) {
+                const [, day, month, year] = match;
+                const [h, m] = horaStr.split(':').map(x => parseInt(x) || 0);
+                dt = new Date(year, month - 1, day, h, m, 0);
+            }
+        }
+        
+        if (dt && !isNaN(dt.getTime())) {
+            const agora = new Date();
+            const diffMs = dt - agora;
+            
+            if (diffMs >= 3600 * 1000) {
+                // Mais de 1h para a previsão
+                return 'previsao-ok';
+            } else if (diffMs >= 0 && diffMs < 3600 * 1000) {
+                // Menos de 1h para a previsão
+                return 'previsao-warning';
+            } else if (diffMs < 0) {
+                // Já passou da previsão
+                return 'previsao-atraso';
+            }
+        }
     }
+    
+    // Se temos apenas data (sem hora)
+    if (data && !hora && !data.includes(':')) {
+        const dt = parseDateTime(data);
+        if (dt && !isNaN(dt.getTime())) {
+            const agora = new Date();
+            const diffMs = dt - agora;
+            
+            if (diffMs >= 3600 * 1000) {
+                return 'previsao-ok';
+            } else if (diffMs >= 0 && diffMs < 3600 * 1000) {
+                return 'previsao-warning';
+            } else if (diffMs < 0) {
+                return 'previsao-atraso';
+            }
+        }
+    }
+    
     return 'previsao-neutral';
-} 
+}
+
+// Sistema de cores funcionando corretamente ✅ 

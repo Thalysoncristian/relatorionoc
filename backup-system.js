@@ -35,7 +35,6 @@ class BackupSystem {
             // Limpar backups antigos
             this.cleanOldBackups();
 
-            console.log(`✅ Backup criado: ${backupId} - ${description}`);
             return backupId;
 
         } catch (error) {
@@ -86,7 +85,6 @@ class BackupSystem {
                 localStorage.setItem('gmsCache', backup.metadata.dashboardData);
             }
 
-            console.log(`✅ Backup restaurado: ${backupId}`);
             return backup;
 
         } catch (error) {
@@ -102,7 +100,6 @@ class BackupSystem {
             const backupsToRemove = backups.slice(this.maxBackups);
             backupsToRemove.forEach(backup => {
                 localStorage.removeItem(this.backupKey + backup.id);
-                console.log(`🗑️ Backup removido: ${backup.id}`);
             });
         }
     }
@@ -129,7 +126,6 @@ class BackupSystem {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            console.log(`📁 Backup exportado: ${backupId}`);
             return true;
 
         } catch (error) {
@@ -155,7 +151,6 @@ class BackupSystem {
                     const backupId = `imported_${Date.now()}`;
                     localStorage.setItem(this.backupKey + backupId, JSON.stringify(backup));
 
-                    console.log(`✅ Backup importado: ${backupId}`);
                     resolve(backupId);
 
                 } catch (error) {
@@ -252,6 +247,4 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         createBackup('Backup inicial - Carregamento da página');
     }, 5000);
-});
-
-console.log('🔄 Sistema de Backup inicializado - Dashboard STTE'); 
+}); 

@@ -31,7 +31,6 @@ class ChangelogManager {
         this.saveToLocalStorage();
         this.updateChangelogFile();
         
-        console.log(`✅ Entrada adicionada ao changelog: ${title}`);
         return entry;
     }
 
@@ -55,7 +54,6 @@ class ChangelogManager {
         this.saveToLocalStorage();
         this.updateChangelogFile();
         
-        console.log(`🚀 Nova versão criada: ${version}`);
         return versionEntry;
     }
 
@@ -96,7 +94,6 @@ class ChangelogManager {
     updateChangelogFile() {
         // Esta função seria chamada para atualizar o arquivo HTML
         // Em um ambiente real, isso seria feito via API ou build process
-        console.log('📝 Changelog atualizado. Execute manualmente para aplicar as mudanças.');
     }
 
     /**
@@ -188,7 +185,6 @@ class ChangelogManager {
             const data = JSON.parse(jsonString);
             this.versionHistory = data;
             this.saveToLocalStorage();
-            console.log('✅ Changelog importado com sucesso');
             return true;
         } catch (error) {
             console.error('❌ Erro ao importar changelog:', error);
@@ -202,7 +198,6 @@ class ChangelogManager {
     clear() {
         this.versionHistory = [];
         this.saveToLocalStorage();
-        console.log('🗑️ Changelog limpo');
     }
 }
 
