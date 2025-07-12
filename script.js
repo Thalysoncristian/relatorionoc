@@ -4,9 +4,23 @@ let dashboardData = [];
 // Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileUpload();
-    showEmptyState();
     initializeNavigation();
+    
+    // Tentar carregar dados do cache primeiro
+    if (!loadFromCache()) {
+        showEmptyState();
+    }
+    
+    // Criar backup inicial
+    setTimeout(() => {
+        if (typeof createBackup === 'function') {
+            createBackup('Inicialização do sistema');
+        }
+    }, 3000);
 });
+
+// Função para alternar entre modo tabela e gráficos
+// Implementada no charts.js
 
 // Inicializar navegação
 function initializeNavigation() {
@@ -56,9 +70,6 @@ function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Remover exibição do nome do arquivo, pois não existe mais o elemento fileName
-    // document.getElementById('fileName').textContent = file.name;
-    
     // Mostrar loading
     showLoading();
     
@@ -70,9 +81,27 @@ function handleFileUpload(event) {
             
             // Processar dados
             processExcelData(workbook);
+            
+            // Verificar se é um arquivo do GMS (baseado no nome ou conteúdo)
+            const isGMSFile = file.name.toLowerCase().includes('acionamentos_gms') || 
+                             file.name.toLowerCase().includes('gms') ||
+                             file.name.toLowerCase().includes('excel.php');
+            
+            if (isGMSFile) {
+                // Salvar no cache se for arquivo do GMS
+                const timestamp = new Date().toISOString();
+                const cacheData = {
+                    timestamp: timestamp,
+                    data: dashboardData
+                };
+                localStorage.setItem('gmsCache', JSON.stringify(cacheData));
+                showCacheInfo(timestamp);
+                showSuccessMessage('Arquivo do GMS importado e salvo no cache!');
+            }
+            
         } catch (error) {
             console.error('Erro ao processar arquivo:', error);
-            alert('Erro ao processar o arquivo. Verifique se é um arquivo Excel válido.');
+            showErrorMessage('Erro ao processar o arquivo. Verifique se é um arquivo Excel válido.');
             hideLoading();
         }
     };
@@ -102,6 +131,8 @@ function processExcelData(workbook) {
         }
 
         dashboardData = processedData;
+        // Garantir que os dados estejam disponíveis globalmente para os gráficos
+        window.dashboardData = processedData;
         updateDashboard();
         hideLoading();
         showDashboard();
@@ -276,6 +307,17 @@ function updateDashboard() {
     updateKPIs();
     updateFilters();
     updateTable();
+    
+    // Disparar evento para atualizar gráficos se necessário
+    window.dispatchEvent(new CustomEvent('dashboardDataUpdated'));
+    
+    // Forçar atualização dos gráficos se estiverem em modo gráfico
+    if (typeof dashboardCharts !== 'undefined' && dashboardCharts.isChartsMode) {
+        console.log('🔄 Forçando atualização dos gráficos...');
+        setTimeout(() => {
+            dashboardCharts.updateCharts();
+        }, 500);
+    }
 }
 
 // Atualizar KPIs
@@ -312,6 +354,35 @@ function updateFilters() {
     populateSelect('filterTipoAMI', tiposAMI);
     populateSelect('filterTipoSite', tiposSite);
     populateSelect('filterAlarmes', alarmes);
+    
+    // Adicionar event listeners para aplicar filtros automaticamente
+    setupFilterEventListeners();
+}
+
+// Configurar event listeners para filtros
+function setupFilterEventListeners() {
+    const filterSelects = [
+        'filterRegiao', 'filterFase', 'filterTipoAMI', 'filterTipoSite', 'filterAlarmes'
+    ];
+    
+    filterSelects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            // Aplicar filtro quando seleção mudar
+            select.addEventListener('change', () => {
+                console.log(`🔍 Filtro ${selectId} alterado para: ${select.value}`);
+                filterData();
+            });
+            
+            // Aplicar filtro quando Enter for pressionado
+            select.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    console.log(`🔍 Enter pressionado no filtro ${selectId}`);
+                    filterData();
+                }
+            });
+        }
+    });
 }
 
 // Popular select com opções
@@ -351,7 +422,39 @@ function filterData() {
     if (tipoSite) filteredData = filteredData.filter(item => item.tipoSite === tipoSite);
     if (alarmes) filteredData = filteredData.filter(item => item.alarmes === alarmes);
 
+    console.log(`🔍 Aplicando filtros: ${filteredData.length} registros encontrados`);
+    console.log('🔍 Filtros aplicados:', { regiao, fase, tipoAMI, tipoSite, alarmes });
+
+    // Atualizar tabela
     updateTable(filteredData);
+    
+    // Atualizar gráficos se estiver no modo gráficos
+    if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
+        console.log('📊 Atualizando gráficos com dados filtrados...');
+        window.dashboardCharts.currentData = filteredData;
+        window.dashboardCharts.updateCharts();
+    }
+}
+
+// Limpar filtros
+function clearFilters() {
+    document.getElementById('filterRegiao').value = '';
+    document.getElementById('filterFase').value = '';
+    document.getElementById('filterTipoAMI').value = '';
+    document.getElementById('filterTipoSite').value = '';
+    document.getElementById('filterAlarmes').value = '';
+    
+    console.log('🧹 Filtros limpos, restaurando dados originais...');
+    
+    // Restaurar dados originais
+    updateTable(dashboardData);
+    
+    // Atualizar gráficos se estiver no modo gráficos
+    if (window.dashboardCharts && window.dashboardCharts.isChartsMode) {
+        console.log('📊 Restaurando gráficos com dados originais...');
+        window.dashboardCharts.currentData = dashboardData;
+        window.dashboardCharts.updateCharts();
+    }
 }
 
 // Atualizar tabela
@@ -392,8 +495,13 @@ function updateTable(data = dashboardData) {
             previsaoTecHtml = `<span class="previsao-badge ${previsaoTecClass}">${previsaoTec}</span>`;
         }
 
+        // Criar link para o GMS se tiver ID
+        const amiLink = item.id ? 
+            `<a href="https://rno.gms.stte.com.br/v3/acionamento_historico.php?acao=exibir&id=${item.id}" target="_blank" class="ami-link" title="Ver histórico do AMI ${item.ami} no GMS (ID: ${item.id})">${item.ami || '-'}</a>` : 
+            (item.ami || '-');
+
         row.innerHTML = `
-            <td>${item.ami || '-'}</td>
+            <td>${amiLink}</td>
             <td>${item.solicitante || '-'}</td>
             <td>${item.estacao || '-'}</td>
             <td>${item.localidade || '-'}</td>
@@ -406,6 +514,15 @@ function updateTable(data = dashboardData) {
             <td><span class="sla-badge sla-${slaInfo.slaClass}">${slaInfo.sla}</span></td>
             <td>${slaInfo.tempo || '-'}</td>
         `;
+        
+        // Adicionar event listener para o link do AMI
+        const amiLinkElement = row.querySelector('.ami-link');
+        if (amiLinkElement) {
+            amiLinkElement.addEventListener('click', function(e) {
+                // Mostrar notificação de abertura
+                showInfoMessage(`Abrindo histórico do AMI ${item.ami} no GMS...`);
+            });
+        }
         
         tableBody.appendChild(row);
     });
@@ -559,6 +676,272 @@ function refreshTable() {
     if (dashboardData.length > 0) {
         updateTable();
     }
+}
+
+// Função para atualizar dados do GMS
+function updateFromGMS() {
+    // Criar backup antes da atualização
+    if (typeof createBackup === 'function') {
+        createBackup('Antes da atualização do GMS');
+    }
+    
+    const gmsUrl = 'https://rno.gms.stte.com.br/v3/excel.php?tabela=acionamento&aba=todos&cx_sel_filtro_01=&cx_filtro_01=&cx_sel_filtro_02=&cx_filtro_02=&cx_sel_filtro_03=&cx_filtro_03=&cx_de=&cx_ate=&abertos=SIM&nao_assumidos=NAO&qde=25';
+    
+    // Abrir o link do GMS em uma nova aba
+    window.open(gmsUrl, '_blank');
+    
+    // Mostrar instruções para o usuário
+    showInfoMessage('Nova aba aberta! Após o download, arraste o arquivo Excel para esta área ou clique em "Carregar Relatório".');
+    
+    // Ativar área de drop para arquivos
+    activateDropZone();
+}
+
+
+
+// Função para ativar área de drop para arquivos
+function activateDropZone() {
+    const dashboard = document.getElementById('dashboard');
+    const emptyState = document.getElementById('emptyState');
+    
+    // Adicionar classe de drop zone
+    if (dashboard) dashboard.classList.add('drop-zone-active');
+    if (emptyState) emptyState.classList.add('drop-zone-active');
+    
+    // Adicionar event listeners para drag and drop
+    document.addEventListener('dragover', handleDragOver);
+    document.addEventListener('drop', handleDrop);
+    
+    // Remover drop zone após 30 segundos
+    setTimeout(() => {
+        deactivateDropZone();
+    }, 30000);
+}
+
+// Função para desativar área de drop
+function deactivateDropZone() {
+    const dashboard = document.getElementById('dashboard');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (dashboard) dashboard.classList.remove('drop-zone-active');
+    if (emptyState) emptyState.classList.remove('drop-zone-active');
+    
+    document.removeEventListener('dragover', handleDragOver);
+    document.removeEventListener('drop', handleDrop);
+}
+
+// Função para lidar com drag over
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+// Função para lidar com drop de arquivo
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        
+        // Verificar se é um arquivo Excel
+        if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+            file.type === 'application/vnd.ms-excel' ||
+            file.name.toLowerCase().endsWith('.xlsx') ||
+            file.name.toLowerCase().endsWith('.xls')) {
+            
+            // Processar o arquivo
+            processDroppedFile(file);
+        } else {
+            showErrorMessage('Por favor, arraste apenas arquivos Excel (.xls ou .xlsx)');
+        }
+    }
+    
+    // Desativar drop zone
+    deactivateDropZone();
+}
+
+// Função para processar arquivo arrastado
+function processDroppedFile(file) {
+    // Criar backup antes de processar arquivo
+    if (typeof createBackup === 'function') {
+        createBackup(`Antes de processar arquivo: ${file.name}`);
+    }
+    
+    showLoading();
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // Processar dados
+            processExcelData(workbook);
+            
+            // Verificar se é um arquivo do GMS
+            const isGMSFile = file.name.toLowerCase().includes('acionamentos_gms') || 
+                             file.name.toLowerCase().includes('gms') ||
+                             file.name.toLowerCase().includes('excel.php');
+            
+            if (isGMSFile) {
+                // Salvar no cache se for arquivo do GMS
+                const timestamp = new Date().toISOString();
+                const cacheData = {
+                    timestamp: timestamp,
+                    data: dashboardData
+                };
+                localStorage.setItem('gmsCache', JSON.stringify(cacheData));
+                showCacheInfo(timestamp);
+                showSuccessMessage('Arquivo do GMS importado e salvo no cache!');
+            } else {
+                showSuccessMessage('Arquivo importado com sucesso!');
+            }
+            
+            hideLoading();
+            
+        } catch (error) {
+            console.error('Erro ao processar arquivo:', error);
+            showErrorMessage('Erro ao processar o arquivo. Verifique se é um arquivo Excel válido.');
+            hideLoading();
+        }
+    };
+    
+    reader.readAsArrayBuffer(file);
+}
+
+// Função para mostrar mensagem informativa
+function showInfoMessage(message) {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-info-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover automaticamente após 10 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 10000);
+}
+
+// Função para mostrar mensagem de sucesso
+function showSuccessMessage(message) {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover automaticamente após 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Função para mostrar mensagem de erro
+function showErrorMessage(message) {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover automaticamente após 8 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 8000);
+}
+
+// Função para carregar dados do cache
+function loadFromCache() {
+    const cachedData = localStorage.getItem('gmsCache');
+    if (cachedData) {
+        try {
+            const parsed = JSON.parse(cachedData);
+            const cacheAge = new Date() - new Date(parsed.timestamp);
+            const maxAge = 30 * 60 * 1000; // 30 minutos
+            
+            if (cacheAge < maxAge) {
+                dashboardData = parsed.data;
+                // Garantir que os dados estejam disponíveis globalmente para os gráficos
+                window.dashboardData = parsed.data;
+                updateDashboard();
+                showDashboard();
+                showCacheInfo(parsed.timestamp);
+                return true;
+            } else {
+                // Cache expirado, remover
+                localStorage.removeItem('gmsCache');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar cache:', error);
+            localStorage.removeItem('gmsCache');
+        }
+    }
+    return false;
+}
+
+// Função para mostrar informações do cache
+function showCacheInfo(timestamp) {
+    const cacheInfo = document.getElementById('cacheInfo');
+    const cacheInfoText = document.getElementById('cacheInfoText');
+    
+    if (timestamp) {
+        const date = new Date(timestamp);
+        const timeAgo = getTimeAgo(date);
+        cacheInfoText.textContent = `Dados atualizados ${timeAgo} (${date.toLocaleString('pt-BR')})`;
+        cacheInfo.style.display = 'block';
+    } else {
+        cacheInfo.style.display = 'none';
+    }
+}
+
+// Função para calcular tempo decorrido
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    
+    if (diffMins < 1) {
+        return 'agora mesmo';
+    } else if (diffMins < 60) {
+        return `há ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+    } else if (diffHours < 24) {
+        return `há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    } else {
+        const diffDays = Math.floor(diffHours / 24);
+        return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
+    }
+}
+
+// Função para limpar cache
+function clearCache() {
+    localStorage.removeItem('gmsCache');
+    document.getElementById('cacheInfo').style.display = 'none';
+    showSuccessMessage('Cache limpo com sucesso!');
 }
 
 // Download de relatório TXT

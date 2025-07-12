@@ -81,6 +81,8 @@ A tabela mostra:
 ### Atualizar Tabela
 - Clique no botão **"Atualizar"** na tabela para recarregar os dados
 
+
+
 ### Exportação Inteligente
 - Os relatórios exportados mantêm os filtros aplicados
 - **Formato TXT**: Relatório no formato "Informe Operacional NOC" com layout profissional

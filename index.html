@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
+    <link href="charts.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header WordPress Style -->
@@ -26,10 +27,10 @@
                 <div class="col">
                     <nav class="main-navigation">
                         <ul class="nav-menu">
-                            <li><a href="#dashboard" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                            <li><a href="#dashboard" class="nav-link active" onclick="toggleDashboardMode()"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                             <li>
-                                <a href="https://rno.gms.stte.com.br/v3/excel.php?tabela=acionamento&aba=todos&cx_sel_filtro_01=&cx_filtro_01=&cx_sel_filtro_02=&cx_filtro_02=&cx_sel_filtro_03=&cx_filtro_03=&cx_de=&cx_ate=&abertos=SIM&nao_assumidos=NAO&qde=24" class="nav-link" target="_blank" rel="noopener">
-                                    <i class="fas fa-file-alt"></i> Relatórios
+                                <a href="#" class="nav-link" onclick="updateFromGMS()">
+                                    <i class="fas fa-sync-alt"></i> Atualizar
                                 </a>
                             </li>
                         </ul>
@@ -147,9 +148,14 @@
                                                 <option value="">Todos</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-2 d-flex align-items-end">
+                                        <div class="col-md-1 d-flex align-items-end">
                                             <button class="btn btn-secondary w-100" onclick="filterData()">
                                                 <i class="fas fa-search"></i> Aplicar
+                                            </button>
+                                        </div>
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()" title="Limpar todos os filtros">
+                                                <i class="fas fa-times"></i> Limpar
                                             </button>
                                         </div>
                                     </div>
@@ -157,8 +163,23 @@
                             </div>
                         </div>
 
+                        <!-- Informações do Cache -->
+                        <div class="row mb-4" id="cacheInfo" style="display: none;">
+                            <div class="col-12">
+                                <div class="cache-info-card">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-info-circle text-info me-2"></i>
+                                        <span id="cacheInfoText">Dados carregados do cache</span>
+                                        <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearCache()">
+                                            <i class="fas fa-trash"></i> Limpar Cache
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Data Table -->
-                        <div class="row mb-4">
+                        <div class="row mb-4" id="tableSection">
                             <div class="col-12">
                                 <div class="table-card">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -227,8 +248,9 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="backup-system.js"></script>
+    <script src="charts.js"></script>
     <script src="script.js"></script>
 </body>
 </html> 

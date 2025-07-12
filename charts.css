@@ -1,0 +1,346 @@
+/* Estilos para Sistema de Gráficos - Dashboard STTE */
+
+/* Seção de Gráficos */
+.charts-section {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Cards dos Gráficos */
+.chart-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-left: 4px solid #0073aa;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 15px;
+    height: 100%;
+}
+
+.chart-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.chart-card h5 {
+    color: #23282d;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chart-card h5 i {
+    color: #0073aa;
+    font-size: 1.2rem;
+}
+
+/* Containers dos Gráficos */
+.chart-container {
+    width: 100%;
+    height: 200px;
+    position: relative;
+}
+
+/* Gráficos específicos */
+#statusChart {
+    height: 220px;
+}
+
+#regionChart {
+    height: 220px;
+}
+
+#alarmChart {
+    height: 220px;
+}
+
+#slaChart {
+    height: 220px;
+}
+
+#timelineChart {
+    height: 250px;
+}
+
+#recurrenceChart {
+    height: 220px;
+}
+
+#technicianChart {
+    height: 220px;
+}
+
+#phaseChart {
+    height: 220px;
+}
+
+#siteTypeChart {
+    height: 220px;
+}
+
+#criticalAlarmsChart {
+    height: 220px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 125px;
+    }
+    
+    #statusChart,
+    #regionChart,
+    #alarmChart,
+    #slaChart {
+        height: 150px;
+    }
+    
+    #timelineChart {
+        height: 175px;
+    }
+    
+    .chart-card {
+        padding: 12px;
+    }
+    
+    .chart-card h5 {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .chart-container {
+        height: 100px;
+    }
+    
+    #statusChart,
+    #regionChart,
+    #alarmChart,
+    #slaChart {
+        height: 125px;
+    }
+    
+    #timelineChart {
+        height: 150px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading para gráficos */
+.chart-container::before {
+    content: "Carregando gráfico...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666;
+    font-size: 0.9rem;
+    z-index: 1;
+    opacity: 0.7;
+}
+
+.chart-container.loaded::before {
+    display: none;
+}
+
+/* Estados dos gráficos */
+.chart-card.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.chart-card.error {
+    border-left-color: #dc3545;
+}
+
+.chart-card.error h5 i {
+    color: #dc3545;
+}
+
+/* Tooltips personalizados */
+.echarts-tooltip {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-size: 0.9rem !important;
+    padding: 10px 15px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Legendas dos gráficos */
+.echarts-legend {
+    font-size: 0.85rem !important;
+}
+
+/* Eixos dos gráficos */
+.echarts-axis-label {
+    font-size: 0.8rem !important;
+    color: #666 !important;
+}
+
+/* Grid dos gráficos */
+.echarts-grid {
+    border-color: #e0e0e0 !important;
+}
+
+/* Cores personalizadas para gráficos */
+.chart-card[data-chart="status"] {
+    border-left-color: #0073aa;
+}
+
+.chart-card[data-chart="region"] {
+    border-left-color: #28a745;
+}
+
+.chart-card[data-chart="alarm"] {
+    border-left-color: #ffc107;
+}
+
+.chart-card[data-chart="sla"] {
+    border-left-color: #dc3545;
+}
+
+.chart-card[data-chart="timeline"] {
+    border-left-color: #6f42c1;
+}
+
+/* Hover effects específicos */
+.chart-card[data-chart="status"]:hover {
+    border-left-color: #005a87;
+}
+
+.chart-card[data-chart="region"]:hover {
+    border-left-color: #1e7e34;
+}
+
+.chart-card[data-chart="alarm"]:hover {
+    border-left-color: #e0a800;
+}
+
+.chart-card[data-chart="sla"]:hover {
+    border-left-color: #c82333;
+}
+
+.chart-card[data-chart="timeline"]:hover {
+    border-left-color: #5a32a3;
+}
+
+/* Indicadores de carregamento */
+.chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.chart-loading::after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e0e0e0;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mensagens de erro */
+.chart-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #dc3545;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 20px;
+}
+
+.chart-error i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Controles de gráfico */
+.chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.chart-controls .btn {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    margin-left: 5px;
+}
+
+/* Filtros de gráfico */
+.chart-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.chart-filters select {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+}
+
+/* Estatísticas dos gráficos */
+.chart-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.chart-stat {
+    text-align: center;
+}
+
+.chart-stat .value {
+    font-weight: 600;
+    color: #0073aa;
+    font-size: 1.1rem;
+}
+
+.chart-stat .label {
+    color: #666;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+} 
