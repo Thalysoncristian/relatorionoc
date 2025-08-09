@@ -1916,4 +1916,409 @@ function getPrevisaoTecClass(data, hora) {
     return 'previsao-neutral';
 }
 
+// Download de relatório PDF
+function downloadPDF() {
+    if (dashboardData.length === 0) {
+        alert('Nenhum dado disponível para download.');
+        return;
+    }
+
+    const regiao = document.getElementById('filterRegiao').value;
+    const fase = document.getElementById('filterFase').value;
+    const tipoAMI = document.getElementById('filterTipoAMI').value;
+    const tipoSite = document.getElementById('filterTipoSite').value;
+    const alarmes = document.getElementById('filterAlarmes').value;
+
+    let filteredData = dashboardData;
+
+    if (regiao) filteredData = filteredData.filter(item => item.regiao === regiao);
+    if (fase) filteredData = filteredData.filter(item => item.fase === fase);
+    if (tipoAMI) filteredData = filteredData.filter(item => item.tipoAMI === tipoAMI);
+    if (tipoSite) filteredData = filteredData.filter(item => item.tipoSite === tipoSite);
+    if (alarmes) filteredData = filteredData.filter(item => item.alarmes === alarmes);
+
+    // Função para obter nome completo do estado
+    function getEstadoNome(sigla) {
+        const estados = {
+            'PA': 'PARÁ',
+            'AM': 'AMAZONAS',
+            'MA': 'MARANHÃO',
+            'RR': 'RORAIMA',
+            'AP': 'AMAPÁ',
+            'TO': 'TOCANTINS',
+            'AC': 'ACRE',
+            'RO': 'RONDÔNIA'
+        };
+        return estados[sigla] || sigla;
+    }
+
+    // Função para formatar data e hora
+    function formatDataHora(item) {
+        let dataHora = '';
+        if (item.dataAcion) {
+            if (/\d{2}[:h]\d{2}/.test(item.dataAcion)) {
+                dataHora = item.dataAcion;
+            } else if (item.horaAcion) {
+                dataHora = `${item.dataAcion} ${item.horaAcion}`;
+            } else {
+                dataHora = item.dataAcion;
+            }
+        } else if (item.horaAcion) {
+            dataHora = item.horaAcion;
+        } else {
+            dataHora = 'N/A';
+        }
+        return dataHora;
+    }
+
+    // Função para formatar previsão do técnico
+    function formatPrevisaoTec(item) {
+        let previsao = '';
+        
+        // Verificar se temos data e hora da previsão do técnico
+        if (item.dataPrevisaoTec) {
+            if (/\d{2}[:h]\d{2}/.test(item.dataPrevisaoTec)) {
+                // Se já contém hora no formato DD/MM/YYYY HH:MM
+                previsao = item.dataPrevisaoTec;
+            } else if (item.horaPrevisaoTec) {
+                // Combinar data e hora separadas
+                previsao = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
+            } else {
+                // Só data
+                previsao = item.dataPrevisaoTec;
+            }
+        } else if (item.horaPrevisaoTec) {
+            // Só hora
+            previsao = item.horaPrevisaoTec;
+        } else if (item.dataHoraPrevisaoAQ1) {
+            // Usar previsão extraída do AQ1 se disponível
+            previsao = item.dataHoraPrevisaoAQ1;
+        } else {
+            // Verificar outros campos possíveis
+            const camposPossiveis = [
+                'previsaoTec',
+                'previsaoTecnico', 
+                'dataPrevisao',
+                'horaPrevisao',
+                'previsao',
+                'dataHoraPrevisao'
+            ];
+            
+            for (const campo of camposPossiveis) {
+                if (item[campo]) {
+                    previsao = item[campo];
+                    break;
+                }
+            }
+            
+            if (!previsao) {
+                previsao = 'N/A';
+            }
+        }
+        return previsao;
+    }
+
+    // Organizar dados por estado e fase
+    const dadosOrganizados = {};
+    
+    filteredData.forEach(item => {
+        const estado = item.regiao || 'N/A';
+        const fase = item.fase || 'N/A';
+        
+        if (!dadosOrganizados[estado]) {
+            dadosOrganizados[estado] = {};
+        }
+        if (!dadosOrganizados[estado][fase]) {
+            dadosOrganizados[estado][fase] = [];
+        }
+        dadosOrganizados[estado][fase].push(item);
+    });
+
+    // Criar PDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Configurações de página
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (2 * margin);
+    
+    let yPosition = 30;
+    
+    // Função para adicionar texto com quebra de linha
+    function addText(text, x, y, maxWidth, fontSize = 12, fontStyle = 'normal') {
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', fontStyle);
+        
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines, x, y);
+        
+        return lines.length * (fontSize * 0.4);
+    }
+    
+    // Função para adicionar linha horizontal
+    function addHorizontalLine(y) {
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, y, pageWidth - margin, y);
+    }
+    
+    // Cabeçalho
+    doc.setFillColor(0, 51, 102); // Azul escuro
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    addText('INFORME OPERACIONAL NOC', pageWidth/2, 20, contentWidth, 18, 'bold');
+    addText('Relatório de Ocorrências Técnicas', pageWidth/2, 30, contentWidth, 12, 'normal');
+    
+    // Resetar cor do texto
+    doc.setTextColor(0, 0, 0);
+    
+    yPosition = 50;
+    
+    // Descrição
+    yPosition += addText('Segue abaixo o resumo das ocorrências registradas no NOC para acompanhamento e providências:', margin, yPosition, contentWidth, 10);
+    yPosition += 10;
+    
+    // Processar cada estado
+    Object.keys(dadosOrganizados).sort().forEach(estado => {
+        const estadoNome = getEstadoNome(estado);
+        const fases = dadosOrganizados[estado];
+        
+        // Verificar se há espaço suficiente na página
+        if (yPosition > pageHeight - 60) {
+            doc.addPage();
+            yPosition = 30;
+        }
+        
+        // Separador de estado
+        addHorizontalLine(yPosition);
+        yPosition += 5;
+        
+        doc.setTextColor(0, 51, 102);
+        yPosition += addText(`ESTADO: ${estadoNome} (${estado})`, margin, yPosition, contentWidth, 14, 'bold');
+        doc.setTextColor(0, 0, 0);
+        
+        addHorizontalLine(yPosition);
+        yPosition += 10;
+        
+        // Processar fases em ordem de prioridade
+        const ordemFases = ['ATUANDO', 'TECNICO ACIONADO', 'TECNICO ATUANDO COM GMG MOVEL', 'PREVISAO', 'INFORMAR TECNICO'];
+        
+        ordemFases.forEach(faseNome => {
+            if (fases[faseNome] && fases[faseNome].length > 0) {
+                const items = fases[faseNome];
+                
+                // Verificar se há espaço suficiente na página
+                if (yPosition > pageHeight - 80) {
+                    doc.addPage();
+                    yPosition = 30;
+                }
+                
+                // Título da seção
+                let tituloSecao = '';
+                let corSecao = [0, 0, 0];
+                
+                switch(faseNome) {
+                    case 'ATUANDO':
+                        tituloSecao = `EM ATUAÇÃO NO ${estadoNome}`;
+                        corSecao = [220, 53, 69]; // Vermelho
+                        break;
+                    case 'TECNICO ACIONADO':
+                        tituloSecao = `TÉCNICO ACIONADO NO ${estadoNome}`;
+                        corSecao = [255, 193, 7]; // Amarelo
+                        break;
+                    case 'TECNICO ATUANDO COM GMG MOVEL':
+                        tituloSecao = `TÉCNICO ATUANDO COM GMG MÓVEL NO ${estadoNome}`;
+                        corSecao = [255, 193, 7]; // Amarelo
+                        break;
+                    case 'PREVISAO':
+                        tituloSecao = `FASE: PREVISÃO NO ${estadoNome}`;
+                        corSecao = [40, 167, 69]; // Verde
+                        break;
+                    case 'INFORMAR TECNICO':
+                        tituloSecao = `INFORMAR TÉCNICO NO ${estadoNome}`;
+                        corSecao = [108, 117, 125]; // Cinza
+                        break;
+                    default:
+                        tituloSecao = `${faseNome} NO ${estadoNome}`;
+                        corSecao = [0, 0, 0]; // Preto
+                }
+                
+                doc.setTextColor(corSecao[0], corSecao[1], corSecao[2]);
+                yPosition += addText(tituloSecao, margin, yPosition, contentWidth, 12, 'bold');
+                doc.setTextColor(0, 0, 0);
+                
+                yPosition += 5;
+                
+                // Listar itens da fase
+                items.forEach(item => {
+                    // Verificar se há espaço suficiente na página
+                    if (yPosition > pageHeight - 100) {
+                        doc.addPage();
+                        yPosition = 30;
+                    }
+                    
+                    // AMI
+                    doc.setTextColor(0, 51, 102);
+                    yPosition += addText(`AMI: ${item.ami || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    // Estação
+                    yPosition += addText(`ESTAÇÃO: ${item.estacao || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Tipo de Alarme
+                    yPosition += addText(`TIPO DE ALARME: ${item.alarmes || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Técnico Responsável
+                    yPosition += addText(`TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Fase
+                    doc.setTextColor(0, 51, 102);
+                    yPosition += addText(`FASE: ${item.fase || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    // Região
+                    yPosition += addText(`REGIÃO: ${item.regiao || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Data e Hora
+                    yPosition += addText(`DATA E HORA: ${formatDataHora(item)}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Previsão do técnico (se não estiver atuando)
+                    const previsaoTec = formatPrevisaoTec(item);
+                    if (previsaoTec !== 'N/A') {
+                        const fase = (item.fase || '').toUpperCase();
+                        const tecnicosAtuando = fase.includes('ATUANDO') || 
+                                              fase.includes('GMG MOVEL') || 
+                                              fase.includes('GMG MÓVEL') || 
+                                              fase.includes('GMG MOVE');
+                        
+                        if (!tecnicosAtuando) {
+                            doc.setTextColor(40, 167, 69); // Verde
+                            yPosition += addText(`PREVISÃO DO TÉCNICO: ${previsaoTec}`, margin, yPosition, contentWidth, 10, 'bold');
+                            doc.setTextColor(0, 0, 0);
+                        }
+                    }
+                    
+                    yPosition += 8;
+                });
+                
+                yPosition += 5;
+            }
+        });
+
+        // Processar outras fases não listadas na ordem padrão
+        Object.keys(fases).forEach(faseNome => {
+            if (!ordemFases.includes(faseNome) && fases[faseNome].length > 0) {
+                const items = fases[faseNome];
+                
+                // Verificar se há espaço suficiente na página
+                if (yPosition > pageHeight - 80) {
+                    doc.addPage();
+                    yPosition = 30;
+                }
+                
+                doc.setTextColor(108, 117, 125);
+                yPosition += addText(`${faseNome} NO ${estadoNome}`, margin, yPosition, contentWidth, 12, 'bold');
+                doc.setTextColor(0, 0, 0);
+                
+                yPosition += 5;
+                
+                items.forEach(item => {
+                    // Verificar se há espaço suficiente na página
+                    if (yPosition > pageHeight - 100) {
+                        doc.addPage();
+                        yPosition = 30;
+                    }
+                    
+                    // AMI
+                    doc.setTextColor(0, 51, 102);
+                    yPosition += addText(`AMI: ${item.ami || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    // Estação
+                    yPosition += addText(`ESTAÇÃO: ${item.estacao || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Tipo de Alarme
+                    yPosition += addText(`TIPO DE ALARME: ${item.alarmes || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Técnico Responsável
+                    yPosition += addText(`TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Fase
+                    doc.setTextColor(0, 51, 102);
+                    yPosition += addText(`FASE: ${item.fase || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    // Região
+                    yPosition += addText(`REGIÃO: ${item.regiao || 'N/A'}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Data e Hora
+                    yPosition += addText(`DATA E HORA: ${formatDataHora(item)}`, margin, yPosition, contentWidth, 10);
+                    
+                    // Previsão do técnico (se não estiver atuando)
+                    const previsaoTec = formatPrevisaoTec(item);
+                    if (previsaoTec !== 'N/A') {
+                        const fase = (item.fase || '').toUpperCase();
+                        const tecnicosAtuando = fase.includes('ATUANDO') || 
+                                              fase.includes('GMG MOVEL') || 
+                                              fase.includes('GMG MÓVEL') || 
+                                              fase.includes('GMG MOVE');
+                        
+                        if (!tecnicosAtuando) {
+                            doc.setTextColor(40, 167, 69); // Verde
+                            yPosition += addText(`PREVISÃO DO TÉCNICO: ${previsaoTec}`, margin, yPosition, contentWidth, 10, 'bold');
+                            doc.setTextColor(0, 0, 0);
+                        }
+                    }
+                    
+                    yPosition += 8;
+                });
+                
+                yPosition += 5;
+            }
+        });
+    });
+
+    // Rodapé com estatísticas
+    if (yPosition > pageHeight - 80) {
+        doc.addPage();
+        yPosition = 30;
+    }
+    
+    addHorizontalLine(yPosition);
+    yPosition += 5;
+    
+    doc.setTextColor(0, 51, 102);
+    yPosition += addText('RESUMO ESTATÍSTICO', margin, yPosition, contentWidth, 14, 'bold');
+    doc.setTextColor(0, 0, 0);
+    
+    addHorizontalLine(yPosition);
+    yPosition += 10;
+    
+    let totalGeral = 0;
+    Object.keys(dadosOrganizados).forEach(estado => {
+        const estadoNome = getEstadoNome(estado);
+        let totalEstado = 0;
+        Object.keys(dadosOrganizados[estado]).forEach(fase => {
+            totalEstado += dadosOrganizados[estado][fase].length;
+        });
+        totalGeral += totalEstado;
+        yPosition += addText(`${estadoNome}: ${totalEstado} ocorrências`, margin, yPosition, contentWidth, 10);
+    });
+    
+    yPosition += 5;
+    doc.setTextColor(0, 51, 102);
+    yPosition += addText(`TOTAL GERAL: ${totalGeral} ocorrências`, margin, yPosition, contentWidth, 12, 'bold');
+    doc.setTextColor(0, 0, 0);
+    
+    yPosition += 10;
+    yPosition += addText(`Relatório gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, yPosition, contentWidth, 10);
+    
+    addHorizontalLine(yPosition);
+    
+    // Download do PDF
+    doc.save(`informe_operacional_noc_${new Date().toISOString().split('T')[0]}.pdf`);
+}
+
 // Sistema de cores funcionando corretamente ✅ 

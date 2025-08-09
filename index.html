@@ -196,8 +196,11 @@
                                             <button class="btn btn-primary me-2" onclick="toggleDashboardMode()">
                                                 <i class="fas fa-chart-bar"></i> Ver Gráficos
                                             </button>
-                                            <button class="btn btn-success btn-export-header" onclick="downloadReport()">
+                                            <button class="btn btn-success btn-export-header me-2" onclick="downloadReport()">
                                                 <i class="fas fa-file-text"></i> Relatório TXT
+                                            </button>
+                                            <button class="btn btn-danger btn-export-header" onclick="downloadPDF()">
+                                                <i class="fas fa-file-pdf"></i> Relatório PDF
                                             </button>
                                         </div>
                                     </div>
@@ -582,6 +585,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="backup-system.js"></script>
     <script src="charts.js"></script>
     <script src="script.js"></script>

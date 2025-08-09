@@ -1104,5 +1104,48 @@ body {
 }
 
 .nav-link-update i {
-    /* Animação removida - ícone estático */
+    margin-right: 8px;
+}
+
+/* Estilos para botões de exportação */
+.btn-export-header {
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.btn-export-header:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-export-header i {
+    margin-right: 6px;
+}
+
+/* Botão PDF específico */
+.btn-danger.btn-export-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+    color: white;
+}
+
+.btn-danger.btn-export-header:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    color: white;
+}
+
+/* Responsividade para botões de exportação */
+@media (max-width: 768px) {
+    .table-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-export-header {
+        width: 100%;
+        margin-bottom: 5px;
+    }
 }
