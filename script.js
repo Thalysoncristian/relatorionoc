@@ -1633,10 +1633,8 @@ function downloadReport() {
     });
 
     // Gerar relatório organizado
-    let reportContent = '╔══════════════════════════════════════════════════════════════════════════════╗\n';
-    reportContent += '║                        INFORME OPERACIONAL NOC                                ║\n';
-    reportContent += '║                    Relatório de Ocorrências Técnicas                          ║\n';
-    reportContent += '╚══════════════════════════════════════════════════════════════════════════════╝\n\n';
+    let reportContent = 'INFORME OPERACIONAL NOC\n';
+    reportContent += 'Relatório de Ocorrências Técnicas\n\n\n';
     reportContent += '📋 Segue abaixo o resumo das ocorrências registradas no NOC para acompanhamento e providências:\n\n';
 
     // Processar cada estado
@@ -1645,7 +1643,8 @@ function downloadReport() {
         const fases = dadosOrganizados[estado];
         
         // Separador de estado
-        reportContent += `\n${'═'.repeat(80)}\n`;
+        reportContent += `\n`;
+        reportContent += `${'═'.repeat(80)}\n`;
         reportContent += `🏢 ESTADO: ${estadoNome} (${estado})\n`;
         reportContent += `${'═'.repeat(80)}\n\n`;
 
@@ -1753,9 +1752,8 @@ function downloadReport() {
     });
 
     // Rodapé do relatório
-    reportContent += `${'═'.repeat(80)}\n`;
-    reportContent += `📊 RESUMO ESTATÍSTICO\n`;
-    reportContent += `${'═'.repeat(80)}\n\n`;
+    reportContent += `\n\n`;
+    reportContent += `📊 RESUMO ESTATÍSTICO\n\n`;
     
     let totalGeral = 0;
     Object.keys(dadosOrganizados).forEach(estado => {
@@ -1768,9 +1766,8 @@ function downloadReport() {
         reportContent += `${estadoNome}: ${totalEstado} ocorrências\n`;
     });
     
-    reportContent += `\nTOTAL GERAL: ${totalGeral} ocorrências\n`;
-    reportContent += `\nRelatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
-    reportContent += `${'═'.repeat(80)}\n`;
+    reportContent += `\nTOTAL GERAL: ${totalGeral} ocorrências\n\n`;
+    reportContent += `Relatório gerado em: ${new Date().toLocaleString('pt-BR')}\n\n`;
 
     // Download do arquivo
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
