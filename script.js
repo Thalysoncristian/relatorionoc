@@ -1579,24 +1579,18 @@ function downloadReport() {
     function formatPrevisaoTec(item) {
         let previsao = '';
         
-        // Verificar se temos data e hora da previsão do técnico
-        if (item.dataPrevisaoTec) {
-            if (/\d{2}[:h]\d{2}/.test(item.dataPrevisaoTec)) {
-                // Se já contém hora no formato DD/MM/YYYY HH:MM
-                previsao = item.dataPrevisaoTec;
-            } else if (item.horaPrevisaoTec) {
-                // Combinar data e hora separadas
-                previsao = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
-            } else {
-                // Só data
-                previsao = item.dataPrevisaoTec;
-            }
+        // Usar a mesma lógica do dashboard - priorizar AQ1 se for previsão válida
+        if (item.previsaoValidaAQ1 && item.dataHoraPrevisaoAQ1) {
+            previsao = item.dataHoraPrevisaoAQ1;
+        } else if (item.dataPrevisaoTec && item.horaPrevisaoTec) {
+            // Combinar data e hora separadas
+            previsao = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
+        } else if (item.dataPrevisaoTec) {
+            // Só data
+            previsao = item.dataPrevisaoTec;
         } else if (item.horaPrevisaoTec) {
             // Só hora
             previsao = item.horaPrevisaoTec;
-        } else if (item.dataHoraPrevisaoAQ1) {
-            // Usar previsão extraída do AQ1 se disponível
-            previsao = item.dataHoraPrevisaoAQ1;
         } else {
             // Verificar outros campos possíveis
             const camposPossiveis = [
@@ -1975,24 +1969,18 @@ function downloadPDF() {
     function formatPrevisaoTec(item) {
         let previsao = '';
         
-        // Verificar se temos data e hora da previsão do técnico
-        if (item.dataPrevisaoTec) {
-            if (/\d{2}[:h]\d{2}/.test(item.dataPrevisaoTec)) {
-                // Se já contém hora no formato DD/MM/YYYY HH:MM
-                previsao = item.dataPrevisaoTec;
-            } else if (item.horaPrevisaoTec) {
-                // Combinar data e hora separadas
-                previsao = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
-            } else {
-                // Só data
-                previsao = item.dataPrevisaoTec;
-            }
+        // Usar a mesma lógica do dashboard - priorizar AQ1 se for previsão válida
+        if (item.previsaoValidaAQ1 && item.dataHoraPrevisaoAQ1) {
+            previsao = item.dataHoraPrevisaoAQ1;
+        } else if (item.dataPrevisaoTec && item.horaPrevisaoTec) {
+            // Combinar data e hora separadas
+            previsao = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
+        } else if (item.dataPrevisaoTec) {
+            // Só data
+            previsao = item.dataPrevisaoTec;
         } else if (item.horaPrevisaoTec) {
             // Só hora
             previsao = item.horaPrevisaoTec;
-        } else if (item.dataHoraPrevisaoAQ1) {
-            // Usar previsão extraída do AQ1 se disponível
-            previsao = item.dataHoraPrevisaoAQ1;
         } else {
             // Verificar outros campos possíveis
             const camposPossiveis = [
