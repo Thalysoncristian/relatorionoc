@@ -1687,7 +1687,6 @@ function downloadReport() {
                     reportContent += `TIPO DE ALARME: ${item.alarmes || 'N/A'}\n`;
                     reportContent += `TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}\n`;
                     reportContent += `FASE: ${item.fase || 'N/A'}\n`;
-                    reportContent += `REGIÃO: ${item.regiao || 'N/A'}\n`;
                     reportContent += `DATA E HORA: ${formatDataHora(item)}\n`;
                     
                     // Adicionar previsão do técnico se disponível
@@ -1726,7 +1725,6 @@ function downloadReport() {
                     reportContent += `TIPO DE ALARME: ${item.alarmes || 'N/A'}\n`;
                     reportContent += `TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}\n`;
                     reportContent += `FASE: ${item.fase || 'N/A'}\n`;
-                    reportContent += `REGIÃO: ${item.regiao || 'N/A'}\n`;
                     reportContent += `DATA E HORA: ${formatDataHora(item)}\n`;
                     
                     const previsaoTec = formatPrevisaoTec(item);
@@ -2163,9 +2161,6 @@ function downloadPDF() {
                     yPosition += addText(`FASE: ${item.fase || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
                     doc.setTextColor(0, 0, 0);
                     
-                    // Região
-                    yPosition += addText(`REGIÃO: ${item.regiao || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
                     // Data e Hora
                     yPosition += addText(`DATA E HORA: ${formatDataHora(item)}`, margin, yPosition, contentWidth, 10);
                     
@@ -2234,9 +2229,6 @@ function downloadPDF() {
                     doc.setTextColor(0, 51, 102);
                     yPosition += addText(`FASE: ${item.fase || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
                     doc.setTextColor(0, 0, 0);
-                    
-                    // Região
-                    yPosition += addText(`REGIÃO: ${item.regiao || 'N/A'}`, margin, yPosition, contentWidth, 10);
                     
                     // Data e Hora
                     yPosition += addText(`DATA E HORA: ${formatDataHora(item)}`, margin, yPosition, contentWidth, 10);
