@@ -1520,7 +1520,7 @@ function clearCache() {
 
 // Função de debug removida - não é mais necessária
 
-// Download de relatório TXT
+// Download de relatório TXT organizado por estados e fases
 function downloadReport() {
     if (dashboardData.length === 0) {
         alert('Nenhum dado disponível para download.');
@@ -1541,23 +1541,25 @@ function downloadReport() {
     if (tipoSite) filteredData = filteredData.filter(item => item.tipoSite === tipoSite);
     if (alarmes) filteredData = filteredData.filter(item => item.alarmes === alarmes);
 
-    let reportContent = '==========================\n';
-    reportContent += 'INFORME OPERACIONAL NOC\n';
-    reportContent += 'Relatório de Ocorrências Técnicas\n';
-    reportContent += '==========================\n\n';
-    reportContent += 'Segue abaixo o resumo das ocorrências registradas no NOC para acompanhamento e providências:\n\n';
+    // Função para obter nome completo do estado
+    function getEstadoNome(sigla) {
+        const estados = {
+            'PA': 'PARÁ',
+            'AM': 'AMAZONAS',
+            'MA': 'MARANHÃO',
+            'RR': 'RORAIMA',
+            'AP': 'AMAPÁ',
+            'TO': 'TOCANTINS',
+            'AC': 'ACRE',
+            'RO': 'RONDÔNIA'
+        };
+        return estados[sigla] || sigla;
+    }
 
-    // Dados formatados conforme especificado
-    filteredData.forEach(item => {
-        reportContent += `AMI: ${item.ami || 'N/A'}\n`;
-        reportContent += `ESTAÇÃO: ${item.estacao || 'N/A'}\n`;
-        reportContent += `TIPO DE ALARME: ${item.alarmes || 'N/A'}\n`;
-        reportContent += `TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}\n`;
-        reportContent += `FASE: ${item.fase || 'N/A'}\n`;
-        reportContent += `REGIÃO: ${item.regiao || 'N/A'}\n`;
+    // Função para formatar data e hora
+    function formatDataHora(item) {
         let dataHora = '';
         if (item.dataAcion) {
-            // Verifica se dataAcion já contém hora (ex: '11/07/2025 23:06:00')
             if (/\d{2}[:h]\d{2}/.test(item.dataAcion)) {
                 dataHora = item.dataAcion;
             } else if (item.horaAcion) {
@@ -1570,8 +1572,211 @@ function downloadReport() {
         } else {
             dataHora = 'N/A';
         }
-        reportContent += `DATA E HORA: ${dataHora}\n\n`;
+        return dataHora;
+    }
+
+    // Função para formatar previsão do técnico
+    function formatPrevisaoTec(item) {
+        let previsao = '';
+        
+        // Verificar se temos data e hora da previsão do técnico
+        if (item.dataPrevisaoTec) {
+            if (/\d{2}[:h]\d{2}/.test(item.dataPrevisaoTec)) {
+                // Se já contém hora no formato DD/MM/YYYY HH:MM
+                previsao = item.dataPrevisaoTec;
+            } else if (item.horaPrevisaoTec) {
+                // Combinar data e hora separadas
+                previsao = `${item.dataPrevisaoTec} ${item.horaPrevisaoTec}`;
+            } else {
+                // Só data
+                previsao = item.dataPrevisaoTec;
+            }
+        } else if (item.horaPrevisaoTec) {
+            // Só hora
+            previsao = item.horaPrevisaoTec;
+        } else if (item.dataHoraPrevisaoAQ1) {
+            // Usar previsão extraída do AQ1 se disponível
+            previsao = item.dataHoraPrevisaoAQ1;
+        } else {
+            // Verificar outros campos possíveis
+            const camposPossiveis = [
+                'previsaoTec',
+                'previsaoTecnico', 
+                'dataPrevisao',
+                'horaPrevisao',
+                'previsao',
+                'dataHoraPrevisao'
+            ];
+            
+            for (const campo of camposPossiveis) {
+                if (item[campo]) {
+                    previsao = item[campo];
+                    break;
+                }
+            }
+            
+            if (!previsao) {
+                previsao = 'N/A';
+            }
+        }
+        return previsao;
+    }
+
+    // Organizar dados por estado e fase
+    const dadosOrganizados = {};
+    
+    filteredData.forEach(item => {
+        const estado = item.regiao || 'N/A';
+        const fase = item.fase || 'N/A';
+        
+        if (!dadosOrganizados[estado]) {
+            dadosOrganizados[estado] = {};
+        }
+        if (!dadosOrganizados[estado][fase]) {
+            dadosOrganizados[estado][fase] = [];
+        }
+        dadosOrganizados[estado][fase].push(item);
     });
+
+    // Gerar relatório organizado
+    let reportContent = '╔══════════════════════════════════════════════════════════════════════════════╗\n';
+    reportContent += '║                        INFORME OPERACIONAL NOC                                ║\n';
+    reportContent += '║                    Relatório de Ocorrências Técnicas                          ║\n';
+    reportContent += '╚══════════════════════════════════════════════════════════════════════════════╝\n\n';
+    reportContent += '📋 Segue abaixo o resumo das ocorrências registradas no NOC para acompanhamento e providências:\n\n';
+
+    // Processar cada estado
+    Object.keys(dadosOrganizados).sort().forEach(estado => {
+        const estadoNome = getEstadoNome(estado);
+        const fases = dadosOrganizados[estado];
+        
+        // Separador de estado
+        reportContent += `\n${'═'.repeat(80)}\n`;
+        reportContent += `🏢 ESTADO: ${estadoNome} (${estado})\n`;
+        reportContent += `${'═'.repeat(80)}\n\n`;
+
+        // Processar fases em ordem de prioridade
+        const ordemFases = ['ATUANDO', 'TECNICO ACIONADO', 'TECNICO ATUANDO COM GMG MOVEL', 'PREVISAO', 'INFORMAR TECNICO'];
+        
+        ordemFases.forEach(faseNome => {
+            if (fases[faseNome] && fases[faseNome].length > 0) {
+                const items = fases[faseNome];
+                
+                // Título da seção
+                let tituloSecao = '';
+                switch(faseNome) {
+                    case 'ATUANDO':
+                        tituloSecao = `🚨 EM ATUAÇÃO NO ${estadoNome}`;
+                        break;
+                    case 'TECNICO ACIONADO':
+                        tituloSecao = `📞 TÉCNICO ACIONADO NO ${estadoNome}`;
+                        break;
+                    case 'TECNICO ATUANDO COM GMG MOVEL':
+                        tituloSecao = `🚗 TÉCNICO ATUANDO COM GMG MÓVEL NO ${estadoNome}`;
+                        break;
+                    case 'PREVISAO':
+                        tituloSecao = `⏰ FASE: PREVISÃO NO ${estadoNome}`;
+                        break;
+                    case 'INFORMAR TECNICO':
+                        tituloSecao = `📢 INFORMAR TÉCNICO NO ${estadoNome}`;
+                        break;
+                    default:
+                        tituloSecao = `📋 ${faseNome} NO ${estadoNome}`;
+                }
+                
+                reportContent += `${tituloSecao}\n`;
+                reportContent += `${'─'.repeat(tituloSecao.length)}\n\n`;
+
+                // Listar itens da fase
+                items.forEach(item => {
+                    reportContent += `AMI: ${item.ami || 'N/A'}\n`;
+                    reportContent += `ESTAÇÃO: ${item.estacao || 'N/A'}\n`;
+                    reportContent += `TIPO DE ALARME: ${item.alarmes || 'N/A'}\n`;
+                    reportContent += `TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}\n`;
+                    reportContent += `FASE: ${item.fase || 'N/A'}\n`;
+                    reportContent += `REGIÃO: ${item.regiao || 'N/A'}\n`;
+                    reportContent += `DATA E HORA: ${formatDataHora(item)}\n`;
+                    
+                    // Adicionar previsão do técnico se disponível
+                    const previsaoTec = formatPrevisaoTec(item);
+                    if (previsaoTec !== 'N/A') {
+                        // Só mostrar previsão se o técnico não estiver atuando
+                        const fase = (item.fase || '').toUpperCase();
+                        const tecnicosAtuando = fase.includes('ATUANDO') || 
+                                              fase.includes('GMG MOVEL') || 
+                                              fase.includes('GMG MÓVEL') || 
+                                              fase.includes('GMG MOVE');
+                        
+                        if (!tecnicosAtuando) {
+                            reportContent += `PREVISÃO DO TÉCNICO: ${previsaoTec}\n`;
+                        }
+                    }
+                    
+                    reportContent += '\n';
+                });
+                
+                reportContent += '\n';
+            }
+        });
+
+        // Processar outras fases não listadas na ordem padrão
+        Object.keys(fases).forEach(faseNome => {
+            if (!ordemFases.includes(faseNome) && fases[faseNome].length > 0) {
+                const items = fases[faseNome];
+                
+                reportContent += `📋 ${faseNome} NO ${estadoNome}\n`;
+                reportContent += `${'─'.repeat(faseNome.length + estadoNome.length + 8)}\n\n`;
+
+                items.forEach(item => {
+                    reportContent += `AMI: ${item.ami || 'N/A'}\n`;
+                    reportContent += `ESTAÇÃO: ${item.estacao || 'N/A'}\n`;
+                    reportContent += `TIPO DE ALARME: ${item.alarmes || 'N/A'}\n`;
+                    reportContent += `TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}\n`;
+                    reportContent += `FASE: ${item.fase || 'N/A'}\n`;
+                    reportContent += `REGIÃO: ${item.regiao || 'N/A'}\n`;
+                    reportContent += `DATA E HORA: ${formatDataHora(item)}\n`;
+                    
+                    const previsaoTec = formatPrevisaoTec(item);
+                    if (previsaoTec !== 'N/A') {
+                        // Só mostrar previsão se o técnico não estiver atuando
+                        const fase = (item.fase || '').toUpperCase();
+                        const tecnicosAtuando = fase.includes('ATUANDO') || 
+                                              fase.includes('GMG MOVEL') || 
+                                              fase.includes('GMG MÓVEL') || 
+                                              fase.includes('GMG MOVE');
+                        
+                        if (!tecnicosAtuando) {
+                            reportContent += `PREVISÃO DO TÉCNICO: ${previsaoTec}\n`;
+                        }
+                    }
+                    
+                    reportContent += '\n';
+                });
+                
+                reportContent += '\n';
+            }
+        });
+    });
+
+    // Rodapé do relatório
+    reportContent += `${'═'.repeat(80)}\n`;
+    reportContent += `📊 RESUMO ESTATÍSTICO\n`;
+    reportContent += `${'═'.repeat(80)}\n\n`;
+    
+    let totalGeral = 0;
+    Object.keys(dadosOrganizados).forEach(estado => {
+        const estadoNome = getEstadoNome(estado);
+        let totalEstado = 0;
+        Object.keys(dadosOrganizados[estado]).forEach(fase => {
+            totalEstado += dadosOrganizados[estado][fase].length;
+        });
+        totalGeral += totalEstado;
+        reportContent += `${estadoNome}: ${totalEstado} ocorrências\n`;
+    });
+    
+    reportContent += `\nTOTAL GERAL: ${totalGeral} ocorrências\n`;
+    reportContent += `\nRelatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    reportContent += `${'═'.repeat(80)}\n`;
 
     // Download do arquivo
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
