@@ -367,9 +367,11 @@ function processRawData(rawData) {
     // Função para converter string data/hora para objeto Date
     function parseDateTimeString(str) {
         if (!str) return null;
-        
-        
-        
+        if (str instanceof Date) return str;
+        if (typeof str !== 'string') {
+            str = String(str);
+        }
+
         // DD/MM/YYYY HH:MM
         let match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})[\sT]+(\d{2}):(\d{2})/);
         if (match) {
@@ -491,6 +493,10 @@ function processRawData(rawData) {
         // Função para converter string data/hora para objeto Date
         function parseDateTimeString(str) {
             if (!str) return null;
+            if (str instanceof Date) return str;
+            if (typeof str !== 'string') {
+                str = String(str);
+            }
             // DD/MM/YYYY HH:MM
             let match = str.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})[\sT]+(\d{2}):(\d{2})/);
             if (match) return new Date(`${match[3]}-${match[2]}-${match[1]}T${match[4]}:${match[5]}:00`);
@@ -505,10 +511,10 @@ function processRawData(rawData) {
             if (match) return new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00`);
             return null;
         }
-        // AQ1 = 41, BP1 = 67, BQ1 = 68
+        // AQ1 e previsão técnica
         const aq1 = row[41] || '';
-        const bp1 = row[67] || '';
-        const bq1 = row[68] || '';
+        const bp1 = row[68] || '';
+        const bq1 = row[69] || '';
         
         // Verificar outras colunas que podem conter previsão
         const outrasColunas = [];
@@ -603,43 +609,43 @@ function processRawData(rawData) {
             tipoAMI: row[2] || '',
             estacao: row[3] || '',
             tipoSite: row[4] || '',
-            produto: row[5] || '',
-            classificacao: row[6] || '',
-            fase: row[7] || '',
-            atuacaoGMG: row[8] || '',
-            dataGMGInicio: formatDateTime(row[9], row[10]),
-            horaGMGInicio: row[10] || '',
-            dataGMGFim: formatDateTime(row[11], row[12]),
-            horaGMGFim: row[12] || '',
-            localidade: row[13] || '',
-            cm: row[14] || '',
-            regiao: row[15] || '',
-            concessionaria: row[16] || '',
-            identificador: row[17] || '',
-            obsEnergia: row[18] || '',
-            solicitante: row[19] || '',
-            dataCadast: formatDateTime(row[20], row[21]),
-            horaCadast: row[21] || '',
-            dataAcion: formatDateTime(row[22], row[23]),
-            horaAcion: row[23] || '',
-            empreiteira: row[24] || '',
-            noc: row[25] || '',
-            tecnico: row[26] || '',
-            tecnologia: row[27] || '',
-            criticidade: row[28] || '',
-            prejuizo: row[29] || '',
-            escopo: row[30] || '',
-            incidenteRAL: row[31] || '',
-            alarmes: row[32] || '',
-            alarmesDescritivo: row[33] || '',
-            dataAlarmes: formatDateTime(row[34], row[35]),
-            horaAlarmes: row[35] || '',
-            origemAlarme: row[36] || '',
+            produto: row[6] || '',
+            classificacao: row[7] || '',
+            fase: row[8] || '',
+            atuacaoGMG: row[9] || '',
+            dataGMGInicio: formatDateTime(row[10], row[11]),
+            horaGMGInicio: row[11] || '',
+            dataGMGFim: formatDateTime(row[12], row[13]),
+            horaGMGFim: row[13] || '',
+            localidade: row[14] || '',
+            cm: row[15] || '',
+            regiao: row[16] || '',
+            concessionaria: row[17] || '',
+            identificador: row[18] || '',
+            obsEnergia: row[19] || '',
+            solicitante: row[20] || '',
+            dataCadast: formatDateTime(row[21], row[22]),
+            horaCadast: row[22] || '',
+            dataAcion: formatDateTime(row[23], row[24]),
+            horaAcion: row[24] || '',
+            empreiteira: row[25] || '',
+            noc: row[26] || '',
+            tecnico: row[27] || '',
+            tecnologia: row[28] || '',
+            criticidade: row[29] || '',
+            prejuizo: row[30] || '',
+            escopo: row[31] || '',
+            incidenteRAL: row[32] || '',
+            alarmes: row[33] || '',
+            alarmesDescritivo: row[34] || '',
+            dataAlarmes: formatDateTime(row[35], row[36]),
+            horaAlarmes: row[36] || '',
+            origemAlarme: row[37] || '',
             sla: '',
             tempo: '',
-            // Ajuste: agora BP1 = 67 (data), BQ1 = 68 (hora)
+            // Ajuste: agora Data Previsão = 68, Hora Previsão = 69
             dataPrevisaoTec: (() => {
-                const val = row[67];
+                const val = row[68];
                 if (!val) return '';
                 // Se for data válida
                 if (typeof val === 'string' && /\d{2}[\/\-]\d{2}[\/\-]\d{4}/.test(val)) {
@@ -664,7 +670,7 @@ function processRawData(rawData) {
                 return String(val);
             })(),
             horaPrevisaoTec: (() => {
-                const val = row[68];
+                const val = row[69];
                 if (!val) return '';
                 if (!isNaN(val)) {
                     let totalSeconds = Math.round((val % 1) * 86400);
