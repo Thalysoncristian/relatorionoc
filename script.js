@@ -2082,42 +2082,37 @@ function downloadPDF() {
             yPosition = 50;
         }
         
+        // Função para adicionar linha com label e valor na mesma linha
+        function addLabelValue(label, value, y) {
+            doc.setTextColor(0, 51, 102); // Azul escuro
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(label, margin, y);
+            
+            doc.setTextColor(0, 0, 0); // Preto
+            doc.text(value, margin + doc.getTextWidth(label), y);
+            
+            return y + 3.5;
+        }
+        
         // AMI
-        doc.setTextColor(0, 51, 102); // Azul escuro
-        yPosition += addText(`AMI:`, margin, yPosition, contentWidth, 9);
-        doc.setTextColor(0, 0, 0); // Preto
-        yPosition += addText(` ${item.ami || 'N/A'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        yPosition = addLabelValue(`AMI: `, `${item.ami || 'N/A'}`, yPosition);
         
         // SITE (usando estacao)
-        doc.setTextColor(0, 51, 102); // Azul escuro
-        yPosition += addText(`SITE:`, margin, yPosition, contentWidth, 9);
-        doc.setTextColor(0, 0, 0); // Preto
-        yPosition += addText(` ${item.estacao || 'N/A'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        yPosition = addLabelValue(`SITE: `, `${item.estacao || 'N/A'}`, yPosition);
         
         // DATA E HORA (formato DD/MM/YYYY HH:MM)
-        doc.setTextColor(0, 51, 102); // Azul escuro
-        yPosition += addText(`DATA E HORA:`, margin, yPosition, contentWidth, 9);
-        doc.setTextColor(0, 0, 0); // Preto
-        yPosition += addText(` ${formatDataHora(item)}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        yPosition = addLabelValue(`DATA E HORA: `, `${formatDataHora(item)}`, yPosition);
         
         // PREVISÃO (formato DD/MM/YYYY HH:MM)
         const previsaoTec = formatPrevisaoTec(item);
-        doc.setTextColor(0, 51, 102); // Azul escuro
-        yPosition += addText(`PREVISÃO:`, margin, yPosition, contentWidth, 9);
-        doc.setTextColor(0, 0, 0); // Preto
-        yPosition += addText(` ${previsaoTec}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        yPosition = addLabelValue(`PREVISÃO: `, `${previsaoTec}`, yPosition);
         
         // TIPO ALARME
-        doc.setTextColor(0, 51, 102); // Azul escuro
-        yPosition += addText(`TIPO ALARME:`, margin, yPosition, contentWidth, 9);
-        doc.setTextColor(0, 0, 0); // Preto
-        yPosition += addText(` ${item.alarmes || 'N/A'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        yPosition = addLabelValue(`TIPO ALARME: `, `${item.alarmes || 'N/A'}`, yPosition);
         
         // TIPO SITE
-        doc.setTextColor(0, 51, 102); // Azul escuro
-        yPosition += addText(`TIPO SITE:`, margin, yPosition, contentWidth, 9);
-        doc.setTextColor(0, 0, 0); // Preto
-        yPosition += addText(` ${item.tipoSite || 'NÃO CLASSIFICADO'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        yPosition = addLabelValue(`TIPO SITE: `, `${item.tipoSite || 'NÃO CLASSIFICADO'}`, yPosition);
         
         yPosition += 6; // Espaço reduzido entre itens para layout mais compacto
     });
