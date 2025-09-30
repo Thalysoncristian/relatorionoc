@@ -1911,7 +1911,7 @@ function getPrevisaoTecClass(data, hora) {
     return 'previsao-neutral';
 }
 
-// Download de relatório PDF
+// Download de relatório PDF - Versão Minimalista Otimizada
 function downloadPDF() {
     if (dashboardData.length === 0) {
         alert('Nenhum dado disponível para download.');
@@ -2043,265 +2043,87 @@ function downloadPDF() {
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
         
-        return lines.length * (fontSize * 0.4);
+        return lines.length * (fontSize * 0.25); // Reduzido para espaçamento mais compacto
     }
     
     // Função para adicionar linha horizontal
     function addHorizontalLine(y) {
-        doc.setDrawColor(200, 200, 200);
+        doc.setDrawColor(0, 0, 0);
         doc.line(margin, y, pageWidth - margin, y);
     }
     
-    // Cabeçalho
-    doc.setFillColor(0, 51, 102); // Azul escuro
-    doc.rect(0, 0, pageWidth, 40, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    addText('INFORME OPERACIONAL NOC', pageWidth/2, 20, contentWidth, 18, 'bold');
-    addText('Relatório de Ocorrências Técnicas', pageWidth/2, 30, contentWidth, 12, 'normal');
-    
-    // Resetar cor do texto
-    doc.setTextColor(0, 0, 0);
-    
-    yPosition = 50;
-    
-    // Descrição
-    yPosition += addText('Segue abaixo o resumo das ocorrências registradas no NOC para acompanhamento e providências:', margin, yPosition, contentWidth, 10);
-    yPosition += 10;
-    
-    // Processar cada estado
-    Object.keys(dadosOrganizados).sort().forEach(estado => {
-        const estadoNome = getEstadoNome(estado);
-        const fases = dadosOrganizados[estado];
+    // Função para adicionar cabeçalho em todas as páginas
+    function addHeader() {
+        doc.setFillColor(0, 51, 102); // Azul escuro
+        doc.rect(0, 0, pageWidth, 40, 'F');
         
-        // Verificar se há espaço suficiente na página
-        if (yPosition > pageHeight - 60) {
-            doc.addPage();
-            yPosition = 30;
-        }
+        doc.setTextColor(255, 255, 255);
+        addText('INFORME OPERACIONAL NOC', pageWidth/2, 20, contentWidth, 18, 'bold');
+        addText('Relatório de ocorrências técnicas', pageWidth/2, 30, contentWidth, 12, 'normal');
         
-        // Separador de estado
-        addHorizontalLine(yPosition);
-        yPosition += 5;
-        
-        doc.setTextColor(0, 51, 102);
-        yPosition += addText(`ESTADO: ${estadoNome} (${estado})`, margin, yPosition, contentWidth, 14, 'bold');
+        // Resetar cor do texto
         doc.setTextColor(0, 0, 0);
-        
-        addHorizontalLine(yPosition);
-        yPosition += 10;
-        
-        // Processar fases em ordem de prioridade
-        const ordemFases = ['ATUANDO', 'TECNICO ACIONADO', 'TECNICO ATUANDO COM GMG MOVEL', 'PREVISAO', 'INFORMAR TECNICO'];
-        
-        ordemFases.forEach(faseNome => {
-            if (fases[faseNome] && fases[faseNome].length > 0) {
-                const items = fases[faseNome];
-                
-                // Verificar se há espaço suficiente na página
-                if (yPosition > pageHeight - 80) {
-                    doc.addPage();
-                    yPosition = 30;
-                }
-                
-                // Título da seção
-                let tituloSecao = '';
-                let corSecao = [0, 0, 0];
-                
-                switch(faseNome) {
-                    case 'ATUANDO':
-                        tituloSecao = `EM ATUAÇÃO NO ${estadoNome}`;
-                        corSecao = [220, 53, 69]; // Vermelho
-                        break;
-                    case 'TECNICO ACIONADO':
-                        tituloSecao = `TÉCNICO ACIONADO NO ${estadoNome}`;
-                        corSecao = [255, 193, 7]; // Amarelo
-                        break;
-                    case 'TECNICO ATUANDO COM GMG MOVEL':
-                        tituloSecao = `TÉCNICO ATUANDO COM GMG MÓVEL NO ${estadoNome}`;
-                        corSecao = [255, 193, 7]; // Amarelo
-                        break;
-                    case 'PREVISAO':
-                        tituloSecao = `FASE: PREVISÃO NO ${estadoNome}`;
-                        corSecao = [40, 167, 69]; // Verde
-                        break;
-                    case 'INFORMAR TECNICO':
-                        tituloSecao = `INFORMAR TÉCNICO NO ${estadoNome}`;
-                        corSecao = [108, 117, 125]; // Cinza
-                        break;
-                    default:
-                        tituloSecao = `${faseNome} NO ${estadoNome}`;
-                        corSecao = [0, 0, 0]; // Preto
-                }
-                
-                doc.setTextColor(corSecao[0], corSecao[1], corSecao[2]);
-                yPosition += addText(tituloSecao, margin, yPosition, contentWidth, 12, 'bold');
-                doc.setTextColor(0, 0, 0);
-                
-                yPosition += 5;
-                
-                // Listar itens da fase
-                items.forEach(item => {
-                    // Verificar se há espaço suficiente na página
-                    if (yPosition > pageHeight - 100) {
-                        doc.addPage();
-                        yPosition = 30;
-                    }
-                    
-                    // AMI
-                    doc.setTextColor(0, 51, 102);
-                    yPosition += addText(`AMI: ${item.ami || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
-                    doc.setTextColor(0, 0, 0);
-                    
-                    // Estação
-                    yPosition += addText(`ESTAÇÃO: ${item.estacao || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Tipo de Alarme
-                    yPosition += addText(`TIPO DE ALARME: ${item.alarmes || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Técnico Responsável
-                    yPosition += addText(`TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Fase
-                    doc.setTextColor(0, 51, 102);
-                    yPosition += addText(`FASE: ${item.fase || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
-                    doc.setTextColor(0, 0, 0);
-                    
-                    // Data e Hora
-                    yPosition += addText(`DATA E HORA: ${formatDataHora(item)}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Previsão do técnico (se não estiver atuando)
-                    const previsaoTec = formatPrevisaoTec(item);
-                    if (previsaoTec !== 'N/A') {
-                        const fase = (item.fase || '').toUpperCase();
-                        const tecnicosAtuando = fase.includes('ATUANDO') || 
-                                              fase.includes('GMG MOVEL') || 
-                                              fase.includes('GMG MÓVEL') || 
-                                              fase.includes('GMG MOVE');
-                        
-                        if (!tecnicosAtuando) {
-                            doc.setTextColor(40, 167, 69); // Verde
-                            yPosition += addText(`PREVISÃO DO TÉCNICO: ${previsaoTec}`, margin, yPosition, contentWidth, 10, 'bold');
-                            doc.setTextColor(0, 0, 0);
-                        }
-                    }
-                    
-                    yPosition += 8;
-                });
-                
-                yPosition += 5;
-            }
-        });
-
-        // Processar outras fases não listadas na ordem padrão
-        Object.keys(fases).forEach(faseNome => {
-            if (!ordemFases.includes(faseNome) && fases[faseNome].length > 0) {
-                const items = fases[faseNome];
-                
-                // Verificar se há espaço suficiente na página
-                if (yPosition > pageHeight - 80) {
-                    doc.addPage();
-                    yPosition = 30;
-                }
-                
-                doc.setTextColor(108, 117, 125);
-                yPosition += addText(`${faseNome} NO ${estadoNome}`, margin, yPosition, contentWidth, 12, 'bold');
-                doc.setTextColor(0, 0, 0);
-                
-                yPosition += 5;
-                
-                items.forEach(item => {
-                    // Verificar se há espaço suficiente na página
-                    if (yPosition > pageHeight - 100) {
-                        doc.addPage();
-                        yPosition = 30;
-                    }
-                    
-                    // AMI
-                    doc.setTextColor(0, 51, 102);
-                    yPosition += addText(`AMI: ${item.ami || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
-                    doc.setTextColor(0, 0, 0);
-                    
-                    // Estação
-                    yPosition += addText(`ESTAÇÃO: ${item.estacao || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Tipo de Alarme
-                    yPosition += addText(`TIPO DE ALARME: ${item.alarmes || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Técnico Responsável
-                    yPosition += addText(`TÉCNICO RESPONSÁVEL: ${item.tecnico || 'N/A'}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Fase
-                    doc.setTextColor(0, 51, 102);
-                    yPosition += addText(`FASE: ${item.fase || 'N/A'}`, margin, yPosition, contentWidth, 10, 'bold');
-                    doc.setTextColor(0, 0, 0);
-                    
-                    // Data e Hora
-                    yPosition += addText(`DATA E HORA: ${formatDataHora(item)}`, margin, yPosition, contentWidth, 10);
-                    
-                    // Previsão do técnico (se não estiver atuando)
-                    const previsaoTec = formatPrevisaoTec(item);
-                    if (previsaoTec !== 'N/A') {
-                        const fase = (item.fase || '').toUpperCase();
-                        const tecnicosAtuando = fase.includes('ATUANDO') || 
-                                              fase.includes('GMG MOVEL') || 
-                                              fase.includes('GMG MÓVEL') || 
-                                              fase.includes('GMG MOVE');
-                        
-                        if (!tecnicosAtuando) {
-                            doc.setTextColor(40, 167, 69); // Verde
-                            yPosition += addText(`PREVISÃO DO TÉCNICO: ${previsaoTec}`, margin, yPosition, contentWidth, 10, 'bold');
-                            doc.setTextColor(0, 0, 0);
-                        }
-                    }
-                    
-                    yPosition += 8;
-                });
-                
-                yPosition += 5;
-            }
-        });
-    });
-
-    // Rodapé com estatísticas
-    if (yPosition > pageHeight - 80) {
-        doc.addPage();
-        yPosition = 30;
     }
     
-    addHorizontalLine(yPosition);
-    yPosition += 5;
+    // Adicionar cabeçalho na primeira página
+    addHeader();
+    yPosition = 50;
     
-    doc.setTextColor(0, 51, 102);
-    yPosition += addText('RESUMO ESTATÍSTICO', margin, yPosition, contentWidth, 14, 'bold');
-    doc.setTextColor(0, 0, 0);
+    // Listar todos os itens diretamente (otimizado para 6 itens por página)
+    console.log(`📄 Gerando PDF com ${filteredData.length} itens - Otimizado para 6 itens por página`);
     
-    addHorizontalLine(yPosition);
-    yPosition += 10;
-    
-    let totalGeral = 0;
-    Object.keys(dadosOrganizados).forEach(estado => {
-        const estadoNome = getEstadoNome(estado);
-        let totalEstado = 0;
-        Object.keys(dadosOrganizados[estado]).forEach(fase => {
-            totalEstado += dadosOrganizados[estado][fase].length;
-        });
-        totalGeral += totalEstado;
-        yPosition += addText(`${estadoNome}: ${totalEstado} ocorrências`, margin, yPosition, contentWidth, 10);
+    filteredData.forEach((item, index) => {
+        // Verificar se há espaço suficiente na página (otimizado para 6 itens por página)
+        // Cada item ocupa aproximadamente 55px (6 linhas x 9px + espaçamento reduzido)
+        if (yPosition > pageHeight - 80) {
+            console.log(`📄 Nova página criada - Item ${index + 1}`);
+            doc.addPage();
+            addHeader(); // Adicionar cabeçalho em cada nova página
+            yPosition = 50;
+        }
+        
+        // AMI
+        doc.setTextColor(0, 51, 102); // Azul escuro
+        yPosition += addText(`AMI:`, margin, yPosition, contentWidth, 9);
+        doc.setTextColor(0, 0, 0); // Preto
+        yPosition += addText(` ${item.ami || 'N/A'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        
+        // SITE (usando estacao)
+        doc.setTextColor(0, 51, 102); // Azul escuro
+        yPosition += addText(`SITE:`, margin, yPosition, contentWidth, 9);
+        doc.setTextColor(0, 0, 0); // Preto
+        yPosition += addText(` ${item.estacao || 'N/A'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        
+        // DATA E HORA (formato DD/MM/YYYY HH:MM)
+        doc.setTextColor(0, 51, 102); // Azul escuro
+        yPosition += addText(`DATA E HORA:`, margin, yPosition, contentWidth, 9);
+        doc.setTextColor(0, 0, 0); // Preto
+        yPosition += addText(` ${formatDataHora(item)}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        
+        // PREVISÃO (formato DD/MM/YYYY HH:MM)
+        const previsaoTec = formatPrevisaoTec(item);
+        doc.setTextColor(0, 51, 102); // Azul escuro
+        yPosition += addText(`PREVISÃO:`, margin, yPosition, contentWidth, 9);
+        doc.setTextColor(0, 0, 0); // Preto
+        yPosition += addText(` ${previsaoTec}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        
+        // TIPO ALARME
+        doc.setTextColor(0, 51, 102); // Azul escuro
+        yPosition += addText(`TIPO ALARME:`, margin, yPosition, contentWidth, 9);
+        doc.setTextColor(0, 0, 0); // Preto
+        yPosition += addText(` ${item.alarmes || 'N/A'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        
+        // TIPO SITE
+        doc.setTextColor(0, 51, 102); // Azul escuro
+        yPosition += addText(`TIPO SITE:`, margin, yPosition, contentWidth, 9);
+        doc.setTextColor(0, 0, 0); // Preto
+        yPosition += addText(` ${item.tipoSite || 'NÃO CLASSIFICADO'}`, margin + 30, yPosition - 3.6, contentWidth, 9);
+        
+        yPosition += 6; // Espaço reduzido entre itens para layout mais compacto
     });
     
-    yPosition += 5;
-    doc.setTextColor(0, 51, 102);
-    yPosition += addText(`TOTAL GERAL: ${totalGeral} ocorrências`, margin, yPosition, contentWidth, 12, 'bold');
-    doc.setTextColor(0, 0, 0);
-    
-    yPosition += 10;
-    yPosition += addText(`Relatório gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, yPosition, contentWidth, 10);
-    
-    addHorizontalLine(yPosition);
-    
     // Download do PDF
-    doc.save(`informe_operacional_noc_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`INFORMATIVO 15 MIN.pdf`);
 }
 
 // Sistema de cores funcionando corretamente ✅ 
