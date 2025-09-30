@@ -246,13 +246,13 @@ function handleFileUpload(event) {
                 showCacheInfo(timestamp);
                 
                 if (isPreventivasFile) {
-                    showSuccessMessage('✅ Arquivo de Preventivas importado com sucesso! Os gráficos específicos de preventivas estão disponíveis.');
+                    // showSuccessMessage('✅ Arquivo de Preventivas importado com sucesso! Os gráficos específicos de preventivas estão disponíveis.');
                     // Ativar automaticamente os gráficos de preventivas
                     if (window.dashboardCharts) {
                         window.dashboardCharts.showPreventivasSection();
                     }
                 } else {
-                    showSuccessMessage('✅ Arquivo de Acionamentos Corretivos importado com sucesso!');
+                    // showSuccessMessage('✅ Arquivo de Acionamentos Corretivos importado com sucesso!');
                     // Ocultar gráficos de preventivas se for corretivo
                     if (window.dashboardCharts) {
                         window.dashboardCharts.hidePreventivasSection();
@@ -1138,8 +1138,8 @@ function updateFromGMS() {
     // Abrir o link do GMS em uma nova aba
     window.open(gmsUrl, '_blank');
     
-    // Mostrar instruções para o usuário
-    showInfoMessage('Nova aba aberta! Após o download, arraste o arquivo Excel para esta área ou clique em "Carregar Relatório".');
+    // Mostrar instruções para o usuário - REMOVIDO
+    // showInfoMessage('Nova aba aberta! Após o download, arraste o arquivo Excel para esta área ou clique em "Carregar Relatório".');
     
     // Ativar área de drop para arquivos
     activateDropZone();
@@ -1163,8 +1163,8 @@ function activateDropZone() {
     // Adicionar event listener apenas para tecla ESC
     document.addEventListener('keydown', handleKeyDown);
     
-    // Mostrar mensagem com instruções
-    showInfoMessage('📁 Modo de arraste visual ativado! Arraste um arquivo Excel aqui ou pressione ESC para cancelar.');
+    // Mostrar mensagem com instruções - REMOVIDO
+    // showInfoMessage('📁 Modo de arraste visual ativado! Arraste um arquivo Excel aqui ou pressione ESC para cancelar.');
     
     // Remover drop zone após 15 segundos
     setTimeout(() => {
@@ -1323,7 +1323,7 @@ function processDroppedFile(file) {
                 showCacheInfo(timestamp);
                 showSuccessMessage('Arquivo do GMS importado e salvo no cache!');
             } else {
-                showSuccessMessage('Arquivo importado com sucesso!');
+                // showSuccessMessage('Arquivo importado com sucesso!');
             }
             
             hideLoading();
