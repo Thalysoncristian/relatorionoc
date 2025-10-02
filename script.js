@@ -2053,68 +2053,138 @@ function downloadPDF() {
     }
     
     // Função para adicionar cabeçalho em todas as páginas
-    function addHeader() {
+    function addHeader(estadoNome = '') {
         doc.setFillColor(0, 51, 102); // Azul escuro
         doc.rect(0, 0, pageWidth, 40, 'F');
         
         doc.setTextColor(255, 255, 255);
-        addText('INFORME OPERACIONAL NOC', pageWidth/2, 20, contentWidth, 18, 'bold');
-        addText('Relatório de ocorrências técnicas', pageWidth/2, 30, contentWidth, 12, 'normal');
+        
+        // Nome do estado no lado esquerdo
+        if (estadoNome) {
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(estadoNome, margin, 20);
+        }
+        
+        // Título principal centralizado à direita
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INFORME OPERACIONAL NOC', pageWidth - margin, 20, { align: 'right' });
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Relatório de ocorrências técnicas', pageWidth - margin, 30, { align: 'right' });
         
         // Resetar cor do texto
         doc.setTextColor(0, 0, 0);
     }
     
-    // Adicionar cabeçalho na primeira página
-    addHeader();
-    yPosition = 50;
+    // Função para obter grupo de estados
+    function getGrupoEstado(sigla) {
+        if (sigla === 'PA' || sigla === 'AP') {
+            return { grupo: 'PARA_AMAPA', nome: 'PARÁ E AMAPÁ', estados: ['PA', 'AP'] };
+        } else if (sigla === 'AM' || sigla === 'RR') {
+            return { grupo: 'AMAZONAS_RORAIMA', nome: 'AMAZONAS E RORAIMA', estados: ['AM', 'RR'] };
+        } else if (sigla === 'MA') {
+            return { grupo: 'MARANHAO', nome: 'MARANHÃO', estados: ['MA'] };
+        }
+        return null; // Estados não incluídos
+    }
+
+    // Filtrar apenas os estados desejados e agrupar
+    const estadosPermitidos = ['PA', 'AP', 'AM', 'RR', 'MA'];
+    const dadosFiltradosPorEstado = {};
     
-    // Listar todos os itens diretamente (otimizado para 6 itens por página)
-    console.log(`📄 Gerando PDF com ${filteredData.length} itens - Otimizado para 6 itens por página`);
+    // Filtrar apenas estados permitidos
+    Object.keys(dadosOrganizados).forEach(estado => {
+        if (estadosPermitidos.includes(estado)) {
+            dadosFiltradosPorEstado[estado] = dadosOrganizados[estado];
+        }
+    });
+
+    // Organizar por grupos de estados
+    const gruposProcessados = new Set();
+    console.log(`📄 Gerando PDF organizado por grupos de estados com ${filteredData.length} itens`);
     
-    filteredData.forEach((item, index) => {
-        // Verificar se há espaço suficiente na página (otimizado para 6 itens por página)
-        // Cada item ocupa aproximadamente 55px (6 linhas x 9px + espaçamento reduzido)
-        if (yPosition > pageHeight - 80) {
-            console.log(`📄 Nova página criada - Item ${index + 1}`);
+    // Processar cada grupo de estados
+    Object.keys(dadosFiltradosPorEstado).forEach((estado, estadoIndex) => {
+        const grupoInfo = getGrupoEstado(estado);
+        
+        if (!grupoInfo || gruposProcessados.has(grupoInfo.grupo)) {
+            return; // Pular se já processou este grupo
+        }
+        
+        gruposProcessados.add(grupoInfo.grupo);
+        
+        // Coletar todos os itens do grupo (todos os estados do grupo)
+        const itensDoGrupo = [];
+        grupoInfo.estados.forEach(estadoDoGrupo => {
+            if (dadosFiltradosPorEstado[estadoDoGrupo]) {
+                Object.keys(dadosFiltradosPorEstado[estadoDoGrupo]).forEach(fase => {
+                    itensDoGrupo.push(...dadosFiltradosPorEstado[estadoDoGrupo][fase]);
+                });
+            }
+        });
+        
+        console.log(`📄 Processando grupo: ${grupoInfo.nome} - ${itensDoGrupo.length} itens`);
+        
+        // Se não é o primeiro grupo, adicionar nova página
+        if (gruposProcessados.size > 1) {
             doc.addPage();
-            addHeader(); // Adicionar cabeçalho em cada nova página
-            yPosition = 50;
         }
         
-        // Função para adicionar linha com label e valor na mesma linha
-        function addLabelValue(label, value, y) {
-            doc.setTextColor(0, 51, 102); // Azul escuro
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.text(label, margin, y);
+        // Adicionar cabeçalho com nome do grupo
+        addHeader(grupoInfo.nome);
+        yPosition = 50;
+        
+        // Processar itens do grupo atual
+        itensDoGrupo.forEach((item, index) => {
+            // Verificar se há espaço suficiente na página (otimizado para 5 itens por página)
+            // Cada item ocupa aproximadamente 65px (7 linhas x 9px + espaçamento)
+            if (yPosition > pageHeight - 90) {
+                console.log(`📄 Nova página criada para ${grupoInfo.nome} - Item ${index + 1}`);
+                doc.addPage();
+                addHeader(grupoInfo.nome); // Adicionar cabeçalho com nome do grupo
+                yPosition = 50;
+            }
             
-            doc.setTextColor(0, 0, 0); // Preto
-            doc.text(value, margin + doc.getTextWidth(label), y);
+            // Função para adicionar linha com label e valor na mesma linha
+            function addLabelValue(label, value, y) {
+                doc.setTextColor(0, 51, 102); // Azul escuro
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.text(label, margin, y);
+                
+                doc.setTextColor(0, 0, 0); // Preto
+                doc.text(value, margin + doc.getTextWidth(label), y);
+                
+                return y + 3.5;
+            }
             
-            return y + 3.5;
-        }
-        
-        // AMI
-        yPosition = addLabelValue(`AMI: `, `${item.ami || 'N/A'}`, yPosition);
-        
-        // SITE (usando estacao)
-        yPosition = addLabelValue(`SITE: `, `${item.estacao || 'N/A'}`, yPosition);
-        
-        // DATA E HORA (formato DD/MM/YYYY HH:MM)
-        yPosition = addLabelValue(`DATA E HORA: `, `${formatDataHora(item)}`, yPosition);
-        
-        // PREVISÃO (formato DD/MM/YYYY HH:MM)
-        const previsaoTec = formatPrevisaoTec(item);
-        yPosition = addLabelValue(`PREVISÃO: `, `${previsaoTec}`, yPosition);
-        
-        // TIPO ALARME
-        yPosition = addLabelValue(`TIPO ALARME: `, `${item.alarmes || 'N/A'}`, yPosition);
-        
-        // TIPO SITE
-        yPosition = addLabelValue(`TIPO SITE: `, `${item.tipoSite || 'NÃO CLASSIFICADO'}`, yPosition);
-        
-        yPosition += 6; // Espaço reduzido entre itens para layout mais compacto
+            // AMI
+            yPosition = addLabelValue(`AMI: `, `${item.ami || 'N/A'}`, yPosition);
+            
+            // SITE (usando estacao)
+            yPosition = addLabelValue(`SITE: `, `${item.estacao || 'N/A'}`, yPosition);
+            
+            // TÉCNICO RESPONSÁVEL - NOVA LINHA ADICIONADA
+            yPosition = addLabelValue(`TÉCNICO: `, `${item.tecnico || 'N/A'}`, yPosition);
+            
+            // DATA E HORA (formato DD/MM/YYYY HH:MM)
+            yPosition = addLabelValue(`DATA E HORA: `, `${formatDataHora(item)}`, yPosition);
+            
+            // PREVISÃO (formato DD/MM/YYYY HH:MM)
+            const previsaoTec = formatPrevisaoTec(item);
+            yPosition = addLabelValue(`PREVISÃO: `, `${previsaoTec}`, yPosition);
+            
+            // TIPO ALARME
+            yPosition = addLabelValue(`TIPO ALARME: `, `${item.alarmes || 'N/A'}`, yPosition);
+            
+            // TIPO SITE
+            yPosition = addLabelValue(`TIPO SITE: `, `${item.tipoSite || 'NÃO CLASSIFICADO'}`, yPosition);
+            
+            yPosition += 8; // Espaço entre itens
+        });
     });
     
     // Download do PDF
